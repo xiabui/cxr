@@ -26,13 +26,13 @@
 
 % Chỗ trống hiện rõ màu đỏ để không nộp nhầm khi còn thiếu.
 \newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
-\newcommand{\pending}[1]{\textcolor{orange}{\textbf{[CHỜ KẾT QUẢ: #1]}}}
+\newcommand{\pending}[1]{\textcolor{orange}{\textbf{[PENDING: #1]}}}
 
 \title{\textbf{Subtlety-Stratified Evaluation of Nodule Detection in Chest
 Radiographs: Aggregate Gains Fall Within Noise While the Hardest Stratum
 Remains Unsolved}}
 
-\author{\todo{tên tác giả, đơn vị, email}}
+\author{\todo{authors, affiliations, e-mail}}
 \date{}
 
 \begin{document}
@@ -132,7 +132,7 @@ carried out before, and the specific remedy we evaluate --- bone suppression
 \section{Related Work}
 
 \paragraph{Nodule detection on chest radiographs.}
-\todo{2--3 câu về các hướng phát hiện nốt trên X-quang ngực, kèm trích dẫn}
+\todo{2--3 sentences on CXR nodule detection approaches, with citations}
 
 \paragraph{Subtlety-stratified evaluation.}
 Stratifying JSRT results by the subtlety rating is not new. \todo{cite} report
@@ -143,17 +143,17 @@ Our study should be read as a test of that proposal rather than as an
 independent idea.
 
 \paragraph{Bone suppression.}
-\todo{2--3 câu về khử bóng xương trên X-quang ngực, kèm trích dẫn}
+\todo{2--3 sentences on bone suppression in CXR, with citations}
 
 \paragraph{Foundation models for medical imaging.}
-RAD-DINO \todo{cite} is a self-supervised vision transformer trained on a large
+RAD-DINO~\cite{perezgarcia2024raddino} is a self-supervised vision transformer trained on a large
 corpus of chest radiographs. Frozen foundation-model features have been
 reported to lose sensitivity to small lesions
-\todo{cite bài 2026}; our results agree, and we treat this as an
+\todo{cite the 2026 frozen-foundation paper}; our results agree, and we treat this as an
 independent replication of that finding rather than as our own discovery.
 
 \paragraph{Benchmarks and contamination.}
-JSRT is included in the training data of NODE21 \todo{cite}, the current
+JSRT is included in the training data of NODE21~\cite{sogancioglu2024node21}, the current
 standard benchmark for nodule detection on chest radiographs. Results on JSRT
 therefore cannot be compared directly against models that have seen NODE21
 training data, and we make no such comparison.
@@ -164,7 +164,7 @@ training data, and we make no such comparison.
 \subsection{Data}
 
 \paragraph{JSRT.}
-The JSRT dataset contains 247 posteroanterior chest radiographs: 154 with a
+The JSRT dataset~\cite{shiraishi2000jsrt} contains 247 posteroanterior chest radiographs: 154 with a
 single pulmonary nodule confirmed by CT, and 93 without. Each nodule carries a
 subtlety rating from 1 to 5 assigned from the observer study of 20
 radiologists. The distribution is uneven --- 25, 29, 50, 38 and 12 nodules at
@@ -174,13 +174,14 @@ to $512 \times 512$ and contrast-limited adaptive histogram equalisation was
 applied (clip limit 2.0, $8 \times 8$ grid).
 
 \paragraph{NIH ChestX-ray14.}
-112{,}120 images were used to pre-train the ResNet-34 backbone. Labels in this
+112{,}120 images from ChestX-ray14~\cite{wang2017chestxray} were used to
+pre-train the ResNet-34 backbone. Labels in this
 dataset are mined automatically from radiology reports and are known to be
 noisy \todo{cite}; we use it only for representation learning and never for
 evaluation.
 
 \paragraph{Bone-shadow pairs.}
-241 paired radiographs with and without bone shadow \todo{cite nguồn Kaggle}
+241 paired radiographs with and without bone shadow \todo{cite source of the bone-shadow pairs}
 were used to train the suppression network described below.
 
 \subsection{Detection Framework}
@@ -204,7 +205,7 @@ our knowledge, documented for this class of loss.
         grayscale input channel.
   \item[Bone suppression + attention.] The same encoder with a second input
         channel carrying a bone-suppressed image produced by a U-Net trained on
-        the paired data, plus CBAM attention blocks.
+        the paired data, plus CBAM attention blocks~\cite{woo2018cbam}.
   \item[Foundation model.] RAD-DINO with all weights frozen, used as a feature
         extractor. Input channels are $[\text{original}, \text{bone-suppressed},
         \text{original}]$. A lightweight convolutional decoder is trained on the
@@ -273,8 +274,7 @@ increases across the three configurations.
 \begin{table}[t]
 \centering
 \caption{Leave-one-out cross-validation on JSRT. CPM is the mean sensitivity
-over six false-positive rates. \pending{khoảng tin cậy cho ba dòng này —
-chạy \texttt{bootstrap\_ci.py} trên scores LOOCV}}
+over six false-positive rates. \pending{confidence intervals for these three rows: run \texttt{bootstrap\_ci.py} on LOOCV scores}}
 \label{tab:loocv}
 \begin{tabular}{lcc}
 \toprule
@@ -360,8 +360,7 @@ under study. An architectural change reported as a gain of four to eight CPM
 points on this dataset, measured from a single training run, cannot be
 distinguished from initialisation noise.
 
-\pending{bảng trung bình ± độ lệch chuẩn qua 5 seed cho cả hai nhánh —
-\texttt{run\_seeds.py}, đang chạy}
+\pending{mean $\pm$ SD over 5 seeds for both arms: \texttt{run\_seeds.py}, currently running}
 
 \subsection{The Most Subtle Stratum Resists Every Configuration}
 
@@ -371,7 +370,7 @@ RAD-DINO configuration, whose backbone was pre-trained on 838{,}000 chest
 radiographs. Scale of pre-training does not, by itself, solve the hardest
 detection problem in this dataset.
 
-\pending{external validation trên VinDr-CXR — xem mục Thảo luận}
+\pending{external validation on VinDr-CXR, see Discussion}
 
 % =====================================================================
 \section{Discussion}
@@ -398,19 +397,19 @@ In ablation, augmenting the training data while the backbone remained frozen
 reduced CPM substantially. The natural explanation is that a frozen backbone
 cannot adapt to transformed inputs, so augmented images fall outside the
 distribution its features were learned on. We flag this as a hypothesis that
-our experiments do not test. \pending{kết quả tinh chỉnh một phần sẽ kiểm chứng
-trực tiếp: nếu mở băng vài tầng cuối làm tăng cường hết phản tác dụng thì giả
-thuyết đúng; nếu không thì phải viết lại đoạn này}
+our experiments do not test. \pending{the partial fine-tuning experiment tests this directly: if
+unfreezing the last blocks removes the augmentation penalty the hypothesis
+holds; if not, this paragraph must be rewritten}
 
 \paragraph{Relation to prior findings.}
 Our observation that frozen foundation features lose small-lesion signal
-reproduces a result published independently \todo{cite bài 2026}. We regard the
+reproduces a result published independently \todo{cite the 2026 frozen-foundation paper}. We regard the
 agreement of two independent studies as more informative than either alone, and
 we claim no priority.
 
 \paragraph{External validation.}
-\pending{kết quả VinDr-CXR}. We note in advance that the hit criterion on
-VinDr-CXR differs from that used on JSRT: VinDr annotations are bounding boxes
+\pending{VinDr-CXR results}. We note in advance that the hit criterion on
+VinDr-CXR~\cite{nguyen2022vindr} differs from that used on JSRT: VinDr annotations are bounding boxes
 and DICOM pixel spacing varies across images, so a millimetre-based radius is
 unreliable and we instead require the predicted peak to fall inside the
 annotated box. CPM values on the two datasets are therefore \emph{not} directly
@@ -465,13 +464,13 @@ scale of pre-training does not address it either.
 % =====================================================================
 \section*{Reproducibility}
 
-\todo{link repo}. Bootstrap and multi-seed tooling
+\todo{repository URL}. Bootstrap and multi-seed tooling
 (\texttt{bootstrap\_ci.py}, \texttt{run\_seeds.py}) is released with the code.
 Per-image raw detection scores are written for every run, so all intervals in
 this paper can be recomputed without retraining.
 
 \section*{Acknowledgements}
-\todo{nếu có}
+\todo{if any}
 
 \bibliographystyle{plain}
 \bibliography{refs}

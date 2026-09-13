@@ -16,3 +16,9 @@ __pycache__/
 _bak_*/
 *.tar.gz
 *.tgz
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.pdf
