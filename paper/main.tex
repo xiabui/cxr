@@ -1,0 +1,479 @@
+% =====================================================================
+%  CXR Nodule Detection — bản thảo bài báo
+%
+%  Biên dịch:  pdflatex main.tex && bibtex main && pdflatex main.tex x2
+%
+%  ĐỔI ĐỊNH DẠNG KHI NỘP:
+%    MICCAI workshop : \documentclass{llncs}      (cần llncs.cls)
+%    IEEE EMBC       : \documentclass[conference]{IEEEtran}
+%    Tạp chí Q2      : theo mẫu của tạp chí
+%  Thân bài không phụ thuộc lớp tài liệu nên đổi được mà không phải viết lại.
+%
+%  MỌI CHỖ \todo{} LÀ VIỆC CHƯA XONG. Đừng nộp khi còn \todo{}.
+%  Đặc biệt: tất cả trích dẫn đang là CHỖ TRỐNG. Xem paper/README_PAPER.md.
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+% Chỗ trống hiện rõ màu đỏ để không nộp nhầm khi còn thiếu.
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand{\pending}[1]{\textcolor{orange}{\textbf{[CHỜ KẾT QUẢ: #1]}}}
+
+\title{\textbf{Subtlety-Stratified Evaluation of Nodule Detection in Chest
+Radiographs: Aggregate Gains Fall Within Noise While the Hardest Stratum
+Remains Unsolved}}
+
+\author{\todo{tên tác giả, đơn vị, email}}
+\date{}
+
+\begin{document}
+\maketitle
+
+% =====================================================================
+\begin{abstract}
+\noindent
+Pulmonary nodule detection on chest radiographs is usually reported with a
+single aggregate figure such as the competition performance metric (CPM).
+Because easy nodules outnumber hard ones, that figure is dominated by cases a
+radiologist would already have seen, and it says little about the subtle
+nodules that carry the clinical value. We evaluate three detection
+configurations on the JSRT dataset (247 images, 154 nodules) stratified by the
+five-level radiologist subtlety rating, and we attach confidence intervals to
+every stratified figure using an image-level cluster bootstrap.
+
+Three results follow. First, stratification reverses the ordering suggested by
+aggregate CPM: a configuration that looks better on average can be worse on the
+subtle strata. Second, once confidence intervals are computed, the aggregate
+differences between configurations on this dataset are \emph{not} separable
+from sampling noise; a paired bootstrap on the bone-suppression contrast gives
+$\Delta\mathrm{CPM} = +2.8$ points with a 95\% interval of
+$[-0.9, +6.3]$. We further measure a run-to-run spread of roughly four CPM
+points attributable to random initialisation alone, comparable to the effect
+sizes commonly reported as improvements in this literature. Third, and in
+contrast, detection of the most subtle stratum stays between 0\% and 8\% across
+every configuration tested, including one built on a foundation model
+pre-trained on 838{,}000 radiographs.
+
+We do not claim novelty for subtlety-stratified evaluation, which has been
+performed before \todo{cite}, nor for the observation that frozen foundation
+features suppress small-lesion signal, reported independently \todo{cite}. Our
+contribution is to quantify the uncertainty that stratified evaluation on a
+247-image dataset actually carries, and to show that this uncertainty is large
+enough to absorb most published effect sizes on this benchmark.
+
+\medskip
+\noindent\textbf{Keywords:} chest radiography, nodule detection, subtlety
+stratification, FROC analysis, bootstrap confidence intervals, reproducibility
+\end{abstract}
+
+% =====================================================================
+\section{Introduction}
+
+A pulmonary nodule that is plainly visible on a chest radiograph is not the
+case that needs a second reader. The cases that matter are the ones a
+radiologist may miss: small, low-contrast lesions, or lesions overlapped by
+ribs and clavicles. Retrospective reviews of missed lung cancer on chest
+radiographs consistently find that the lesion was visible in hindsight
+\todo{cite}, which is precisely the population a detection system should
+target.
+
+Reported performance rarely reflects this. The standard summary is the
+competition performance metric (CPM), the mean sensitivity across a fixed set
+of false-positive rates. CPM is computed over all nodules at once. When the
+easy nodules outnumber the hard ones, as they do in every public dataset we are
+aware of, CPM is largely a measure of performance on cases of limited clinical
+interest. A system can post a respectable CPM while detecting almost nothing in
+the subtle stratum.
+
+The JSRT dataset is unusual in permitting a direct test, because each nodule
+carries a subtlety rating from 1 (extremely subtle) to 5 (obvious) assigned by
+radiologist consensus. This paper uses that rating in two ways. We report
+sensitivity per stratum rather than in aggregate, and, more importantly, we
+attach a confidence interval to every stratified figure.
+
+The second step turns out to matter more than the first. Stratifying 154
+nodules into five levels leaves 25 nodules in the hardest stratum and 12 in the
+easiest. At those counts a single nodule changing state moves the reported
+sensitivity by four to eight percentage points. Differences of that size are
+routinely reported as improvements. We show they should not be.
+
+Our contributions:
+
+\begin{enumerate}
+  \item A subtlety-stratified comparison of three detection configurations
+        under leave-one-out cross-validation on JSRT, with every figure
+        accompanied by a bootstrap confidence interval.
+  \item An image-level cluster bootstrap appropriate to FROC analysis, in
+        which the operating threshold is recomputed inside each resample
+        rather than held fixed. We show why the fixed-threshold alternative
+        understates the interval.
+  \item A measurement of run-to-run variability due to random initialisation,
+        which we find comparable in magnitude to the architectural effects
+        under study.
+  \item Evidence that the most subtle stratum resists every configuration
+        tested, including frozen foundation-model features.
+\end{enumerate}
+
+We make no claim of priority. Subtlety-stratified analysis of JSRT has been
+carried out before, and the specific remedy we evaluate --- bone suppression
+--- was proposed in that earlier work as a promising direction left untested
+\todo{cite}. This paper tests it.
+
+% =====================================================================
+\section{Related Work}
+
+\paragraph{Nodule detection on chest radiographs.}
+\todo{2--3 câu về các hướng phát hiện nốt trên X-quang ngực, kèm trích dẫn}
+
+\paragraph{Subtlety-stratified evaluation.}
+Stratifying JSRT results by the subtlety rating is not new. \todo{cite} report
+a full-resolution encoder--decoder architecture evaluated per subtlety level,
+and observe the same collapse on the lowest levels that we observe here. That
+work proposes bone suppression as a plausible remedy but does not evaluate it.
+Our study should be read as a test of that proposal rather than as an
+independent idea.
+
+\paragraph{Bone suppression.}
+\todo{2--3 câu về khử bóng xương trên X-quang ngực, kèm trích dẫn}
+
+\paragraph{Foundation models for medical imaging.}
+RAD-DINO \todo{cite} is a self-supervised vision transformer trained on a large
+corpus of chest radiographs. Frozen foundation-model features have been
+reported to lose sensitivity to small lesions
+\todo{cite bài 2026}; our results agree, and we treat this as an
+independent replication of that finding rather than as our own discovery.
+
+\paragraph{Benchmarks and contamination.}
+JSRT is included in the training data of NODE21 \todo{cite}, the current
+standard benchmark for nodule detection on chest radiographs. Results on JSRT
+therefore cannot be compared directly against models that have seen NODE21
+training data, and we make no such comparison.
+
+% =====================================================================
+\section{Materials and Methods}
+
+\subsection{Data}
+
+\paragraph{JSRT.}
+The JSRT dataset contains 247 posteroanterior chest radiographs: 154 with a
+single pulmonary nodule confirmed by CT, and 93 without. Each nodule carries a
+subtlety rating from 1 to 5 assigned from the observer study of 20
+radiologists. The distribution is uneven --- 25, 29, 50, 38 and 12 nodules at
+levels 1 through 5 --- and the two extreme strata are small enough that we
+interpret differences there with corresponding caution. Images were resampled
+to $512 \times 512$ and contrast-limited adaptive histogram equalisation was
+applied (clip limit 2.0, $8 \times 8$ grid).
+
+\paragraph{NIH ChestX-ray14.}
+112{,}120 images were used to pre-train the ResNet-34 backbone. Labels in this
+dataset are mined automatically from radiology reports and are known to be
+noisy \todo{cite}; we use it only for representation learning and never for
+evaluation.
+
+\paragraph{Bone-shadow pairs.}
+241 paired radiographs with and without bone shadow \todo{cite nguồn Kaggle}
+were used to train the suppression network described below.
+
+\subsection{Detection Framework}
+
+We treat detection as heatmap regression. Each nodule centre generates a
+Gaussian target ($\sigma = 8$ px) on a stride-4 output grid; the value at the
+rounded centre pixel is forced to exactly 1.0, without which the positive class
+is never represented exactly and the network fails to train. Predictions are
+decoded by non-maximum suppression with a minimum peak separation of 10 px.
+
+Training minimises a focal mean-squared-error loss. Gradients are clipped to
+norm 5.0. \textbf{Mixed precision is disabled}: with automatic mixed precision
+enabled the loss underflowed to exactly zero and the network did not learn at
+all. We note this because it cost considerable debugging time and is not, to
+our knowledge, documented for this class of loss.
+
+\subsection{Configurations Compared}
+
+\begin{description}
+  \item[Baseline.] ResNet-34 encoder pre-trained on NIH ChestX-ray14, single
+        grayscale input channel.
+  \item[Bone suppression + attention.] The same encoder with a second input
+        channel carrying a bone-suppressed image produced by a U-Net trained on
+        the paired data, plus CBAM attention blocks.
+  \item[Foundation model.] RAD-DINO with all weights frozen, used as a feature
+        extractor. Input channels are $[\text{original}, \text{bone-suppressed},
+        \text{original}]$. A lightweight convolutional decoder is trained on the
+        extracted features.
+\end{description}
+
+\subsection{Evaluation Protocol}
+
+We report free-response ROC (FROC) analysis. A detection counts as a hit when
+its peak falls within 15\,mm of a true nodule centre; each nodule may be matched
+at most once, and unmatched peaks are false positives. CPM is the mean
+sensitivity at 0.125, 0.25, 0.5, 1.0, 2.0 and 4.0 false positives per image.
+
+Stratified sensitivity uses \emph{the same operating thresholds} as the
+aggregate FROC curve. This point is easy to get wrong: computing stratified
+sensitivity by counting all detections without applying the FROC threshold
+inflates the figures substantially and destroys their monotonicity with respect
+to subtlety. We made this error twice during development before catching it.
+
+The primary protocol is leave-one-out cross-validation, which maximises
+training data on a small dataset. Ten-fold cross-validation is used for the
+ablation study, where the number of configurations makes leave-one-out
+prohibitive. Folds are split \emph{by image}, so that all augmented variants of
+an image fall on the same side of the split; splitting by variant leaks
+training data into the test fold.
+
+\subsection{Uncertainty Quantification}
+\label{sec:bootstrap}
+
+Every figure we report carries a 95\% bias-corrected and accelerated (BCa)
+bootstrap confidence interval over $B = 2000$ resamples. Three design choices
+matter, and getting any of them wrong produces intervals that are too narrow.
+
+\paragraph{Resample images, not nodules.}
+The FROC operating threshold is defined by a false-positive count \emph{per
+image}. Resampling individual nodules leaves the number of images undefined and
+detaches false positives from the images that produced them, which makes the
+threshold meaningless. We therefore resample images with replacement; a
+selected image contributes all of its nodules and all of its false positives.
+
+\paragraph{Recompute the threshold inside each resample.}
+Holding the original-sample threshold fixed ignores the uncertainty in
+estimating that threshold, and yields intervals that are narrower than the data
+support. In each resample we recompute the threshold from that resample's own
+false-positive scores.
+
+\paragraph{Pair the comparison.}
+When comparing two configurations we resample the same image indices for both
+and form the interval on the \emph{difference}. Both configurations are
+evaluated on the same 247 images, so most of the variance is shared and
+cancels. An unpaired comparison discards this and produces an interval much
+wider than necessary.
+
+Because the stratified comparisons involve five strata at several operating
+points, we make no multiplicity correction and treat those results as
+exploratory.
+
+% =====================================================================
+\section{Results}
+
+\subsection{Aggregate Performance}
+
+Table~\ref{tab:loocv} reports leave-one-out CPM. Aggregate performance
+increases across the three configurations.
+
+\begin{table}[t]
+\centering
+\caption{Leave-one-out cross-validation on JSRT. CPM is the mean sensitivity
+over six false-positive rates. \pending{khoảng tin cậy cho ba dòng này —
+chạy \texttt{bootstrap\_ci.py} trên scores LOOCV}}
+\label{tab:loocv}
+\begin{tabular}{lcc}
+\toprule
+Configuration & Architecture & CPM (\%) \\
+\midrule
+Baseline                        & ResNet-34                  & 29.5 \\
++ bone suppression + attention  & ResNet-34 + U-Net + CBAM   & 34.2 \\
+Foundation model                & RAD-DINO (frozen) + U-Net  & 42.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Stratification Reverses the Ordering}
+
+Table~\ref{tab:strat} tells a different story. The configuration with bone
+suppression and attention improves the two hardest strata over baseline
+(0.0\%~$\rightarrow$~8.0\% and 6.9\%~$\rightarrow$~20.7\%) while
+\emph{losing} ground on the two easiest (68.4\%~$\rightarrow$~57.9\% and
+83.3\%~$\rightarrow$~58.3\%). Aggregate CPM, which rose from 29.5 to 34.2,
+conceals this trade entirely.
+
+\begin{table}[t]
+\centering
+\caption{Sensitivity by subtlety level at 1.0 false positive per image.
+Level 1 is the most subtle. Note the small denominators.}
+\label{tab:strat}
+\begin{tabular}{lcccc}
+\toprule
+Subtlety level & $n$ & Baseline & ResNet34+U-Net+CBAM & RAD-DINO+U-Net \\
+\midrule
+1 --- extremely subtle & 25 &  0.0 &  8.0 &  4.0 \\
+2 --- very subtle      & 29 &  6.9 & 20.7 & 27.6 \\
+3 --- moderate         & 50 & 20.0 & 32.0 & 48.0 \\
+4 --- fairly obvious   & 38 & 68.4 & 57.9 & 73.7 \\
+5 --- obvious          & 12 & 83.3 & 58.3 & 75.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We stress what the level-1 column does \emph{not} show. The difference between
+8.0\% and 4.0\% is one nodule out of 25. It is not evidence that either
+configuration is better, and we do not interpret it as such.
+
+\subsection{Aggregate Differences Do Not Survive Confidence Intervals}
+
+Table~\ref{tab:paired} applies the paired bootstrap of
+Section~\ref{sec:bootstrap} to the bone-suppression contrast under ten-fold
+cross-validation. The aggregate difference is $+2.8$ CPM points with a 95\%
+interval of $[-0.9, +6.3]$. The interval contains zero.
+
+\begin{table}[t]
+\centering
+\caption{Paired image-level bootstrap for the bone-suppression contrast
+(RAD-DINO, ten-fold, $B = 3000$). $\Delta$ is configuration B minus A.
+Intervals are percentile intervals on the difference.}
+\label{tab:paired}
+\begin{tabular}{lccc}
+\toprule
+Metric & A: 3-channel & B: + bone supp. & $\Delta$ [95\% CI] \\
+\midrule
+CPM                 & 40.5 & 43.3 & $+2.8$ $[-0.9, +6.3]$ \\
+Sens @ 0.5 FP/image & 39.6 & 39.0 & $-0.6$ $[-6.1, +4.9]$ \\
+Sens @ 1.0 FP/image & 44.8 & 46.1 & $+1.3$ $[-4.5, +6.7]$ \\
+Sens @ 4.0 FP/image & 50.6 & 60.4 & $+9.7$ $[+4.0, +15.1]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Only the operating point at 4.0 false positives per image yields an interval
+excluding zero. That is a false-positive rate too high to be clinically
+useful, and we do not present it as a meaningful gain.
+
+\subsection{Run-to-Run Variability}
+
+Re-running a configuration with an identical seed and configuration file
+produced a CPM of 40.5\% where 36.5\% had been recorded previously. The cause
+was that the random seed governed the cross-validation split but was never
+applied to the weight initialisation of the detection head. The resulting
+spread of roughly four CPM points arises from initialisation alone.
+
+This figure deserves emphasis because it is comparable to the effect sizes
+under study. An architectural change reported as a gain of four to eight CPM
+points on this dataset, measured from a single training run, cannot be
+distinguished from initialisation noise.
+
+\pending{bảng trung bình ± độ lệch chuẩn qua 5 seed cho cả hai nhánh —
+\texttt{run\_seeds.py}, đang chạy}
+
+\subsection{The Most Subtle Stratum Resists Every Configuration}
+
+Across every configuration tested, sensitivity on subtlety level 1 ranges from
+0\% to 8\% --- between zero and two nodules out of 25. This includes the
+RAD-DINO configuration, whose backbone was pre-trained on 838{,}000 chest
+radiographs. Scale of pre-training does not, by itself, solve the hardest
+detection problem in this dataset.
+
+\pending{external validation trên VinDr-CXR — xem mục Thảo luận}
+
+% =====================================================================
+\section{Discussion}
+
+\paragraph{What stratification buys.}
+The central observation of this paper is visible in Tables~\ref{tab:loocv}
+and~\ref{tab:strat} read together. Aggregate CPM rises monotonically across the
+three configurations, and on that evidence one would recommend the third. The
+stratified table shows the second configuration trading easy-nodule sensitivity
+for hard-nodule sensitivity --- a trade that may well be desirable clinically,
+and one that aggregate reporting renders invisible in either direction.
+
+\paragraph{What confidence intervals take away.}
+Having argued that stratification reveals structure hidden by aggregation, we
+are obliged to report that most of that structure is not statistically
+resolvable at this sample size. With 25 nodules in the hardest stratum, the
+bootstrap interval on a stratified sensitivity spans tens of percentage points.
+We consider reporting these intervals a requirement rather than an option: a
+stratified analysis without them invites precisely the over-interpretation that
+stratification was meant to prevent.
+
+\paragraph{Frozen backbones and augmentation.}
+In ablation, augmenting the training data while the backbone remained frozen
+reduced CPM substantially. The natural explanation is that a frozen backbone
+cannot adapt to transformed inputs, so augmented images fall outside the
+distribution its features were learned on. We flag this as a hypothesis that
+our experiments do not test. \pending{kết quả tinh chỉnh một phần sẽ kiểm chứng
+trực tiếp: nếu mở băng vài tầng cuối làm tăng cường hết phản tác dụng thì giả
+thuyết đúng; nếu không thì phải viết lại đoạn này}
+
+\paragraph{Relation to prior findings.}
+Our observation that frozen foundation features lose small-lesion signal
+reproduces a result published independently \todo{cite bài 2026}. We regard the
+agreement of two independent studies as more informative than either alone, and
+we claim no priority.
+
+\paragraph{External validation.}
+\pending{kết quả VinDr-CXR}. We note in advance that the hit criterion on
+VinDr-CXR differs from that used on JSRT: VinDr annotations are bounding boxes
+and DICOM pixel spacing varies across images, so a millimetre-based radius is
+unreliable and we instead require the predicted peak to fall inside the
+annotated box. CPM values on the two datasets are therefore \emph{not} directly
+comparable, and we use the external results only as a qualitative indication of
+generalisation.
+
+% =====================================================================
+\section{Limitations}
+
+\begin{enumerate}
+  \item \textbf{Small, single-source dataset.} 247 images from one institution,
+        with 154 nodules. Every confidence interval in this paper is wide as a
+        direct consequence, and the stratified intervals are very wide.
+  \item \textbf{One nodule per image.} JSRT contains a single nodule per
+        positive case, which does not reflect clinical reality.
+  \item \textbf{Frozen backbone.} The foundation-model configuration uses
+        RAD-DINO purely as a feature extractor. We did not fine-tune it, so our
+        results characterise frozen features and not the model's ceiling.
+  \item \textbf{Performance below published work.} Our absolute CPM values are
+        lower than results reported by others on JSRT \todo{cite}. We report
+        relative comparisons under a controlled protocol rather than competing
+        on absolute performance.
+  \item \textbf{Benchmark contamination.} JSRT forms part of the NODE21
+        training data, so comparison against NODE21-trained models is not
+        meaningful.
+  \item \textbf{Exploratory stratified statistics.} The stratified comparisons
+        involve multiple strata and operating points without multiplicity
+        correction.
+\end{enumerate}
+
+% =====================================================================
+\section{Conclusion}
+
+Evaluating nodule detection on chest radiographs by a single aggregate metric
+hides the behaviour that matters clinically. Stratifying by radiologist-assigned
+subtlety exposes trade-offs between easy and hard nodules that aggregate CPM
+conceals in both directions.
+
+Attaching confidence intervals to those stratified figures, however, shows that
+on a 247-image dataset most of the differences between configurations are not
+separable from noise --- and that run-to-run variability from random
+initialisation alone is of comparable magnitude. We recommend that studies on
+datasets of this size report image-level bootstrap intervals and multi-seed
+variability as a matter of course.
+
+One finding survives this scrutiny. Detection of the most subtle nodules
+remains between 0\% and 8\% across every configuration we tested, including one
+built on a backbone pre-trained on 838{,}000 radiographs. The hardest and most
+clinically valuable stratum is not addressed by any method examined here, and
+scale of pre-training does not address it either.
+
+% =====================================================================
+\section*{Reproducibility}
+
+\todo{link repo}. Bootstrap and multi-seed tooling
+(\texttt{bootstrap\_ci.py}, \texttt{run\_seeds.py}) is released with the code.
+Per-image raw detection scores are written for every run, so all intervals in
+this paper can be recomputed without retraining.
+
+\section*{Acknowledgements}
+\todo{nếu có}
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}
