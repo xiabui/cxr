@@ -183,9 +183,20 @@ def sens_by_subtlety(nod_scores, fp_scores, n_images, fp_rates):
     return table, per_rate, groups
 
 
-def main(config, epochs, lr):
+def main(config, epochs, lr, seed=None, tag=None):
     cfg = yaml.safe_load(open(config))
     device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # GIEO HẠT ĐẦY ĐỦ. Bản trước KHÔNG gieo hạt cho torch, nên trọng số khởi tạo
+    # của đầu phát hiện khác nhau mỗi lần chạy: cùng config, cùng seed trong
+    # config, CPM vẫn dao động khoảng 4 điểm (36,5% so với 40,5% khi chạy lại).
+    # Bốn điểm dao động đó lớn bằng nửa hiệu ứng mà bài báo muốn công bố, nên
+    # không gieo hạt là không thể tái lập.
+    seed = int(cfg.get("seed", 42)) if seed is None else int(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    print(f"Seed: {seed}")
     size = cfg["data"]["image_size"]
     stride = cfg["model"]["heatmap_stride"]
     out_size = size // stride
@@ -215,7 +226,7 @@ def main(config, epochs, lr):
     else:
         k = cfg["train"].get("folds", 10)
         idx = np.arange(n)
-        np.random.RandomState(cfg.get("seed", 42)).shuffle(idx)
+        np.random.RandomState(seed).shuffle(idx)
         parts = np.array_split(idx, k)
         folds = [([j for j in idx if j not in set(p)], list(p)) for p in parts]
     print(f"Giao thức: {proto} | {len(folds)} fold\n")
@@ -267,19 +278,21 @@ def main(config, epochs, lr):
         print(f"    {names.get(sub, sub):<16} {h:3d}/{t:<3d}  {100*h/t if t else 0:5.1f}%")
 
     os.makedirs("runs", exist_ok=True)
+    tg = tag or f"raddino_plain_{proto}_seed{seed}"
     json.dump({"backbone": "rad-dino-frozen", "protocol": proto, "cpm": cpm,
+               "seed": seed,
                "sens_at": {str(k): v for k, v in sens_at.items()},
                "subtlety_cpm": {str(k): v for k, v in by_sub_cpm.items()},
                "n_nodules": tot, "n_images": n},
-              open("runs/results_raddino.json", "w"), indent=2)
-    print("\nĐã lưu runs/results_raddino.json")
+              open(f"runs/results_{tg}.json", "w"), indent=2)
+    print(f"\nĐã lưu runs/results_{tg}.json")
 
-    json.dump({"tag": f"raddino_plain_{proto}", "backbone": "rad-dino-frozen",
-               "protocol": proto, "seed": int(cfg.get("seed", 42)),
+    json.dump({"tag": tg, "backbone": "rad-dino-frozen",
+               "protocol": proto, "seed": seed,
                "config": os.path.basename(config),
                "fp_rates": list(fp_rates), "n_images": n, "n_nodules": tot,
-               "images": all_recs}, open("runs/scores_raddino_plain.json", "w"))
-    print("Đã lưu runs/scores_raddino_plain.json  (dùng cho bootstrap_ci.py)")
+               "images": all_recs}, open(f"runs/scores_{tg}.json", "w"))
+    print(f"Đã lưu runs/scores_{tg}.json  (dùng cho bootstrap_ci.py)")
 
 
 if __name__ == "__main__":
@@ -287,5 +300,8 @@ if __name__ == "__main__":
     ap.add_argument("--config", default="configs/jsrt_10fold.yaml")
     ap.add_argument("--epochs", type=int, default=60)
     ap.add_argument("--lr", type=float, default=1e-3)
+    ap.add_argument("--seed", type=int, default=None,
+                    help="gieo hạt cho torch VÀ numpy; bắt buộc khi chạy nhiều seed")
+    ap.add_argument("--tag", default=None)
     a = ap.parse_args()
-    main(a.config, a.epochs, a.lr)
+    main(a.config, a.epochs, a.lr, a.seed, a.tag)
