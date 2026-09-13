@@ -347,7 +347,45 @@ Only the operating point at 4.0 false positives per image yields an interval
 excluding zero. That is a false-positive rate too high to be clinically
 useful, and we do not present it as a meaningful gain.
 
+\subsection{One Contrast Does Survive: Augmentation Under a Frozen Backbone}
+
+Not every difference is lost in noise. Table~\ref{tab:aug} reports the effect of
+augmenting the training data while the backbone stays frozen. CPM falls by 22.1
+points, with a 95\% interval of $[-28.2, -16.1]$, and every individual operating
+point excludes zero. This effect is an order of magnitude larger than the
+initialisation noise quantified in Section~\ref{sec:noise}, and we report it
+without reservation.
+
+\begin{table}[t]
+\centering
+\caption{Paired image-level bootstrap for the augmentation contrast (RAD-DINO
+with frozen backbone, ten-fold, $B = 3000$). Augmentation uses eight variants
+per image. $\Delta$ is with-augmentation minus without.}
+\label{tab:aug}
+\begin{tabular}{lccc}
+\toprule
+Metric & No aug. & + augmentation & $\Delta$ [95\% CI] \\
+\midrule
+CPM                     & 43.3 & 21.2 & $-22.1$ $[-28.2, -16.1]$ \\
+Sens @ 1.0 FP/image     & 46.1 & 24.0 & $-22.1$ $[-30.4, -14.2]$ \\
+\midrule
+\multicolumn{4}{l}{\emph{By subtlety, at 1.0 FP/image:}} \\
+Level 1 (most subtle)   &  4.0 &  4.0 & $+0.0$ $[-11.5, +11.5]$ \\
+Level 3                 & 46.0 & 20.0 & $-26.0$ $[-39.2, -12.2]$ \\
+Level 5 (obvious)       & 83.3 & 41.7 & $-41.7$ $[-71.4, -11.8]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The stratified rows carry an observation we did not anticipate. The degradation
+is monotonic in subtlety --- the clearest nodules lose the most --- and level 1
+does not move at all. A manipulation severe enough to halve overall performance
+leaves the hardest stratum exactly where it was, because at 4\% (one nodule of
+25) there is essentially nothing left to lose. We return to this floor effect
+in Section~\ref{sec:floor}.
+
 \subsection{Run-to-Run Variability}
+\label{sec:noise}
 
 Re-running a configuration with an identical seed and configuration file
 produced a CPM of 40.5\% where 36.5\% had been recorded previously. The cause
@@ -363,12 +401,20 @@ distinguished from initialisation noise.
 \pending{mean $\pm$ SD over 5 seeds for both arms: \texttt{run\_seeds.py}, currently running}
 
 \subsection{The Most Subtle Stratum Resists Every Configuration}
+\label{sec:floor}
 
 Across every configuration tested, sensitivity on subtlety level 1 ranges from
 0\% to 8\% --- between zero and two nodules out of 25. This includes the
 RAD-DINO configuration, whose backbone was pre-trained on 838{,}000 chest
 radiographs. Scale of pre-training does not, by itself, solve the hardest
 detection problem in this dataset.
+
+Table~\ref{tab:aug} sharpens the point from the opposite direction. Level 1 is
+not merely unresponsive to changes that \emph{help}; it is equally unresponsive
+to a change that severely \emph{hurts}. Augmentation under a frozen backbone
+costs 22 CPM points overall and 42 points on the most obvious nodules, yet
+leaves level 1 unchanged. The stratum behaves as a floor that our methods
+neither raise nor lower.
 
 \pending{external validation on VinDr-CXR, see Discussion}
 
@@ -393,11 +439,12 @@ stratified analysis without them invites precisely the over-interpretation that
 stratification was meant to prevent.
 
 \paragraph{Frozen backbones and augmentation.}
-In ablation, augmenting the training data while the backbone remained frozen
-reduced CPM substantially. The natural explanation is that a frozen backbone
-cannot adapt to transformed inputs, so augmented images fall outside the
-distribution its features were learned on. We flag this as a hypothesis that
-our experiments do not test. \pending{the partial fine-tuning experiment tests this directly: if
+Augmenting the training data while the backbone remained frozen reduced CPM by
+22.1 points $[-28.2, -16.1]$. The magnitude is measured and is not in question.
+The \emph{explanation} is: the natural account is that a frozen backbone cannot
+adapt to transformed inputs, so augmented images fall outside the distribution
+its features were learned on. We flag this as a hypothesis our experiments do
+not test, and we distinguish it carefully from the measurement. \pending{the partial fine-tuning experiment tests this directly: if
 unfreezing the last blocks removes the augmentation penalty the hypothesis
 holds; if not, this paragraph must be rewritten}
 

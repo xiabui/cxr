@@ -76,7 +76,33 @@ ResNet34: baseline 29,3% | +U-Net 29,7% | +U-Net+CBAM 37,6% | +U-Net+weighted lo
 
 RAD-DINO (frozen): 3 kênh lặp 36,5% | +U-Net **44,4%** | +U-Net+augmentation **23,9%**
 
-### Ba phát hiện chính của bài báo
+### CẬP NHẬT 13/09/2026 — đã có khoảng tin cậy, phát hiện 1 KHÔNG đứng vững
+
+Chạy lại 10-fold seed 42 kèm bootstrap bắt cặp (`bootstrap_ci.py`):
+
+| Đối chiếu | Hiệu số CPM | Khoảng tin cậy 95% | Kết luận |
+|---|---|---|---|
+| Khử xương (3 kênh → +U-Net) | **+2,8** | **[−0,9; +6,3]** | CHỨA 0 — không kết luận được |
+| Tăng cường khi backbone đóng băng | **−22,1** | **[−28,2; −16,1]** | vững chắc |
+
+Hai điều buộc phải ghi nhớ:
+
+1. **Số 7,9 điểm của phát hiện 1 không tái lập được.** Chạy lại đúng cấu hình
+   đã cho 36,5% thì ra **40,5%** — chênh 4 điểm chỉ do khởi tạo ngẫu nhiên, vì
+   `raddino_train2.py` trước đây KHÔNG gieo hạt cho torch (đã sửa). Hiệu ứng
+   7,9 nhiều khả năng là ~2,8 thật cộng nhiễu thuận chiều ở cả hai đầu.
+2. **Phát hiện 2 và 3 vững.** Tăng cường làm sụt 22 điểm, mọi mức FP đều có
+   khoảng tin cậy không chứa 0. Số đo mới: B=43,3% → C=21,2%.
+
+**Quan sát mới, đáng đưa vào bài:** tăng cường làm sụt 22 điểm tổng thể và 42
+điểm ở nhóm 5, nhưng nhóm 1 **không đổi** (+0,0 [−11,5; +11,5]). Nhóm 1 đã ở
+mức sàn 4% (1/25) nên không còn gì để mất. Nhóm khó nhất trơ với cả thay đổi
+có lợi lẫn thay đổi có hại.
+
+Bản thảo trong `paper/` đã được định khung lại theo bằng chứng này. Đọc
+`paper/README_PAPER.md` mục 3 trước khi sửa khung bài.
+
+### Ba phát hiện chính của bài báo (KHUNG CŨ — xem cập nhật ở trên)
 
 1. **Bone suppression nhất quán qua hai kiến trúc.** Cộng 7,9 điểm ngay cả với
    backbone đóng băng. Bằng chứng chéo kiến trúc mạnh hơn quan sát đơn lẻ.
