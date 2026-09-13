@@ -1,0 +1,49 @@
+# Cấu hình JSRT — máy local Ubuntu, RTX 3060 6GB. Giao thức 10-FOLD (phát triển).
+# SỬA /home/bvxia/... cho khớp máy bạn.
+seed: 42
+
+data:
+  root: /home/bvxia/workspace/cancer-detection/cxr_nodule/data/jsrt
+  images_dir: images/images
+  labels_csv: labels.csv
+  masks_dir: ""
+  processed_dir: /home/bvxia/workspace/cancer-detection/cxr_nodule/data/jsrt/processed
+  image_size: 512
+
+preprocess:
+  clahe: true
+  clahe_clip: 2.0
+  clahe_grid: 8
+  lung_crop: false
+  invert_if_needed: true
+
+model:
+  backbone: resnet34
+  pretrained: true
+  pretrained_backbone: /home/bvxia/workspace/cancer-detection/cxr_nodule/checkpoints/nih_backbone_resnet34.pt
+  # ---- đóng góp 1,2: bật/tắt ở đây ----
+  in_channels: 2            # 1=baseline, 2=bone suppression (cần images_bs/)
+  use_attention: true       # đóng góp 2 (CBAM)
+  heatmap_stride: 4
+  gaussian_sigma: 8
+
+train:
+  protocol: kfold
+  folds: 10
+  stratify_by: subtlety
+  epochs: 120
+  batch_size: 4             # 6GB VRAM; nếu OOM giảm 2
+  lr: 0.0003
+  weight_decay: 0.0001
+  loss: focal_mse
+  subtlety_weighted_loss: false   # đóng góp 3: true để bật weighted loss
+  amp: false                # TẮT amp (tránh NaN)
+  num_workers: 4
+
+resume_dir: /home/bvxia/workspace/cancer-detection/cxr_nodule/runs_10fold
+
+eval:
+  fp_rates: [0.125, 0.25, 0.5, 1.0, 2.0, 4.0]
+  hit_radius_mm: 15
+  peak_min_distance: 10
+  report_by_subtlety: true

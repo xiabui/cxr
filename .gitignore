@@ -1,0 +1,16 @@
+# Dữ liệu và đặc trưng KHÔNG vào repo (hàng GB). Xem colab/README_COLAB.md.
+data/
+features_aug/
+features_raddino/
+checkpoints/
+runs/
+runs_10fold/
+loocv_*/
+*.npy
+*.pt
+*.pth
+*.log
+__pycache__/
+*.pyc
+.DS_Store
+_bak_*/

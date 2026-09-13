@@ -1,0 +1,49 @@
+# Cấu hình JSRT — máy local Ubuntu, RTX 3060 6GB. Giao thức LOOCV (con số chính thức).
+# SỬA /home/bvxia/... cho khớp máy bạn.
+seed: 42
+
+data:
+  root: /home/bvxia/workspace/cancer-detection/cxr_nodule/data/jsrt
+  images_dir: images
+  labels_csv: labels.csv
+  masks_dir: ""
+  processed_dir: /home/bvxia/workspace/cancer-detection/cxr_nodule/data/jsrt/processed
+  image_size: 512
+
+preprocess:
+  clahe: true
+  clahe_clip: 2.0
+  clahe_grid: 8
+  lung_crop: false
+  invert_if_needed: true
+
+model:
+  backbone: resnet34
+  pretrained: true
+  pretrained_backbone: /home/bvxia/workspace/cancer-detection/cxr_nodule/checkpoints/nih_backbone_resnet34.pt
+  # cấu hình TỐT NHẤT (bone suppression + attention). Baseline: in_channels=1, use_attention=false
+  in_channels: 1
+  use_attention: false
+  heatmap_stride: 4
+  gaussian_sigma: 8
+
+train:
+  protocol: loco
+  folds: 10                 # bỏ qua khi loco
+  stratify_by: subtlety
+  epochs: 100
+  batch_size: 2
+  lr: 0.0003
+  weight_decay: 0.0001
+  loss: focal_mse
+  subtlety_weighted_loss: false
+  amp: false
+  num_workers: 2
+
+resume_dir: /home/bvxia/workspace/cancer-detection/cxr_nodule/loocv_baseline
+
+eval:
+  fp_rates: [0.125, 0.25, 0.5, 1.0, 2.0, 4.0]
+  hit_radius_mm: 15
+  peak_min_distance: 10
+  report_by_subtlety: true

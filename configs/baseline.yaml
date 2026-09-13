@@ -1,0 +1,42 @@
+# Cấu hình baseline — chỉnh ở đây, không sửa code.
+seed: 42
+
+data:
+  root: data/jsrt
+  images_dir: images
+  labels_csv: labels.csv
+  masks_dir: masks          # để trống nếu không dùng SCR masks
+  processed_dir: data/jsrt/processed
+  image_size: 512           # ảnh gốc 2048; 512 là cân bằng tốt cho baseline
+
+preprocess:
+  clahe: true
+  clahe_clip: 2.0
+  clahe_grid: 8
+  lung_crop: true           # cần masks_dir; nếu không có sẽ tự bỏ qua
+  invert_if_needed: true
+
+model:
+  backbone: resnet34        # PHẢI khớp backbone đã pre-train ở giai đoạn 1
+  pretrained: true          # true = khởi tạo ImageNet trước khi nạp checkpoint NIH
+  pretrained_backbone: /content/drive/MyDrive/Master/dataset/nih_cxr14/checkpoints/nih_backbone_resnet34.pt   # để null nếu train từ đầu
+  heatmap_stride: 4         # output heatmap = image_size / stride
+  gaussian_sigma: 6         # bán kính target quanh tâm nốt (px trên heatmap)
+
+train:
+  protocol: kfold           # 'loco' (leave-one-case-out) hoặc 'kfold'
+  folds: 5
+  stratify_by: subtlety     # đảm bảo mỗi fold cân bằng mức khó
+  epochs: 40
+  batch_size: 8
+  lr: 0.0003
+  weight_decay: 0.0001
+  loss: focal_mse           # baseline; đổi 'subtlety_weighted' ở đóng góp 3
+  amp: true
+  num_workers: 4
+
+eval:
+  fp_rates: [0.125, 0.25, 0.5, 1.0, 2.0, 4.0]   # điểm FROC (FP/ảnh)
+  hit_radius_mm: 15         # coi là trúng nếu tâm dự đoán nằm trong bán kính này
+  peak_min_distance: 10     # NMS đơn giản trên heatmap (px)
+  report_by_subtlety: true
