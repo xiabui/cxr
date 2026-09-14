@@ -1,0 +1,55 @@
+# Cấu hình homeserver cho raddino_finetune.py (bản song sinh của jsrt_colab_ft.yaml).
+#
+# Dẫn xuất TỪNG DÒNG từ configs/jsrt_10fold.yaml trên homeserver. Chỉ khác
+# đường dẫn. Mọi tham số ảnh hưởng tới kết quả được giữ NGUYÊN, nếu không số
+# đo trên Colab sẽ không so sánh được với số đo trên homeserver.
+#
+# ĐỪNG sửa ba dòng sau nếu chưa hiểu hậu quả:
+#   gaussian_sigma: 8   (configs/jsrt_colab.yaml cũ để 6 -> KHÔNG so sánh được)
+#   hit_radius_mm: 15   (đổi là đổi định nghĩa "trúng")
+#   amp                 (không khai báo ở đây; raddino_finetune.py mặc định TẮT,
+#                        vì AMP từng làm loss bằng 0 — CLAUDE.md mục 5)
+seed: 42
+
+data:
+  root: /home/bvxia/workspace/cancer-detection/cxr_nodule/data/jsrt
+  images_dir: images/images
+  labels_csv: labels.csv
+  masks_dir: ""
+  processed_dir: /home/bvxia/workspace/cancer-detection/cxr_nodule/data/jsrt/processed
+  image_size: 512
+
+preprocess:
+  clahe: true
+  clahe_clip: 2.0
+  clahe_grid: 8
+  lung_crop: false
+  invert_if_needed: true
+
+model:
+  backbone: resnet34
+  pretrained: true
+  pretrained_backbone: /home/bvxia/workspace/cancer-detection/cxr_nodule/checkpoints/nih_backbone_resnet34.pt
+  in_channels: 2
+  use_attention: true
+  heatmap_stride: 4
+  gaussian_sigma: 8
+
+train:
+  protocol: kfold
+  folds: 10
+  stratify_by: subtlety
+  epochs: 120
+  batch_size: 4
+  lr: 0.0003
+  weight_decay: 0.0001
+  loss: focal_mse
+  subtlety_weighted_loss: false
+  amp: false
+  num_workers: 4
+
+eval:
+  fp_rates: [0.125, 0.25, 0.5, 1.0, 2.0, 4.0]
+  hit_radius_mm: 15
+  peak_min_distance: 10
+  report_by_subtlety: true
