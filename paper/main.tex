@@ -291,6 +291,17 @@ Foundation model                & RAD-DINO (frozen) + U-Net  & 42.5 \\
 \end{tabular}
 \end{table}
 
+\begin{figure}[t]
+\centering
+\includegraphics{fig/fig_froc.pdf}
+\caption{FROC curves for three RAD-DINO configurations (ten-fold). Shaded bands
+are 95\% image-level bootstrap intervals. The bone-suppressed and 3-channel
+curves overlap across most of the range; the augmented configuration is
+separated from both throughout. Line style and marker encode configuration in
+addition to colour, so the figure survives greyscale printing.}
+\label{fig:froc}
+\end{figure}
+
 \subsection{Stratification Reverses the Ordering}
 
 Table~\ref{tab:strat} tells a different story. The configuration with bone
@@ -317,6 +328,16 @@ Subtlety level & $n$ & Baseline & ResNet34+U-Net+CBAM & RAD-DINO+U-Net \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics{fig/fig_strat.pdf}
+\caption{Sensitivity at 1.0 FP/image by subtlety level, with 95\% image-level
+bootstrap intervals. The intervals are wide at every level and overlap almost
+everywhere --- which is the point: at 12--50 nodules per stratum, differences of
+the size usually reported as improvements cannot be resolved.}
+\label{fig:strat}
+\end{figure}
 
 We stress what the level-1 column does \emph{not} show. The difference between
 8.0\% and 4.0\% is one nodule out of 25. It is not evidence that either
@@ -416,12 +437,24 @@ Subtlety level & $\Delta$ (points) & 95\% CI \\
 \end{tabular}
 \end{table}
 
+\begin{figure}[t]
+\centering
+\includegraphics{fig/fig_forest.pdf}
+\caption{Effect of bone suppression by subtlety level, averaged over five seeds
+with 95\% image-level bootstrap intervals. Intervals excluding zero are drawn in
+colour. The aggregate CPM gain is real, but the only stratum that individually
+clears zero is level 4 --- the second-easiest. The point estimate for the most
+subtle level is negative.}
+\label{fig:forest}
+\end{figure}
+
 The only stratum with an interval excluding zero is level 4, the second-easiest.
 The point estimate on level 1 is negative. The aggregate gain of 2.9 CPM points
 is therefore driven by nodules that were already fairly visible, and there is no
 evidence of improvement where improvement would matter.
 
-This is the central observation of the paper, stated precisely. Bone
+Figure~\ref{fig:forest} shows this at a glance. This is the central
+observation of the paper, stated precisely. Bone
 suppression produces a statistically defensible improvement in aggregate CPM.
 Reported as a single number, that improvement would be taken as progress on
 nodule detection. Stratified, it is progress on the nodules a radiologist was
