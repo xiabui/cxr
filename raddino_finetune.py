@@ -332,7 +332,7 @@ def main(a):
     if proto == "loco":
         folds = [([j for j in range(n) if j != i], [i]) for i in range(n)]
     else:
-        k = cfg["train"].get("folds", 10)
+        k = a.folds or cfg["train"].get("folds", 10)
         np.random.RandomState(a.seed).shuffle(idx)
         parts = np.array_split(idx, k)
         folds = [([j for j in idx if j not in set(p)], list(p)) for p in parts]
@@ -395,9 +395,12 @@ def main(a):
             del enc_f
         torch.cuda.empty_cache()
 
+    # Ghi lại ĐỦ tham số vào kết quả, để sau này đối chiếu hai nhánh có thực sự
+    # chỉ khác nhau ở 'variants' hay không.
     report(all_recs, rates, n, a.tag, {
         "protocol": proto, "seed": a.seed, "unfreeze": a.unfreeze,
-        "variants": a.variants, "epochs": a.epochs,
+        "variants": a.variants, "epochs": a.epochs, "folds": len(folds),
+        "batch": a.batch,
         "lr_backbone": a.lr_backbone, "lr_head": a.lr_head, "amp": a.amp})
 
 
@@ -408,7 +411,12 @@ if __name__ == "__main__":
                    help="số tầng transformer cuối được mở băng; 0 = đóng băng hoàn toàn")
     p.add_argument("--variants", type=int, default=1,
                    help="1 = không tăng cường; 8 = như raddino_extract2.py")
-    p.add_argument("--epochs", type=int, default=30)
+    p.add_argument("--epochs", type=int, default=20,
+                   help="PHẢI để giống nhau giữa hai nhánh A và B, nếu không "
+                        "là đổi hai yếu tố cùng lúc và không quy kết được")
+    p.add_argument("--folds", type=int, default=None,
+                   help="ghi đè số fold trong config; giảm để tiết kiệm thời "
+                        "gian Colab. Cũng PHẢI giống nhau giữa hai nhánh")
     p.add_argument("--batch", type=int, default=4)
     p.add_argument("--lr-backbone", type=float, default=1e-5)
     p.add_argument("--lr-head", type=float, default=1e-3)
