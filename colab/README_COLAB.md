@@ -2,14 +2,12 @@
 
 ## Một lần duy nhất
 
-**1. Tạo repo riêng trên GitHub** (tên tuỳ ý, ví dụ `cxr-nodule`), để **Private**.
+**1. ~~Tạo repo~~ XONG** — repo là `xiabui/cxr`.
 
-**2. Đẩy mã nguồn lên** — chạy trên máy Mac, trong thư mục `~/Papers/CXR`:
+**2. ~~Đẩy mã nguồn lên~~ XONG.** Về sau chỉ cần:
 
 ```bash
-git remote add origin https://github.com/<tên-tài-khoản>/cxr-nodule.git
-git branch -M main
-git push -u origin main
+cd ~/Papers/CXR && git push
 ```
 
 **3. Tạo GitHub token** tại <https://github.com/settings/tokens> →
