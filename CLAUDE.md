@@ -76,13 +76,48 @@ ResNet34: baseline 29,3% | +U-Net 29,7% | +U-Net+CBAM 37,6% | +U-Net+weighted lo
 
 RAD-DINO (frozen): 3 kênh lặp 36,5% | +U-Net **44,4%** | +U-Net+augmentation **23,9%**
 
-### CẬP NHẬT 13/09/2026 — đã có khoảng tin cậy, phát hiện 1 KHÔNG đứng vững
+### CẬP NHẬT 14/09/2026 — 5 seed đã chạy xong, phát hiện 1 ĐỨNG VỮNG nhưng NHỎ HƠN NHIỀU
+
+Năm seed, 10-fold, bắt cặp trên cùng 247 ảnh (`seed_pooled_ci.py`):
+
+| | A: 3 kênh lặp | B: +khử xương | Hiệu |
+|---|---|---|---|
+| Trung bình ± đlc | 40,4 ± 1,0 | 43,3 ± 1,4 | **+2,9 ± 1,0** |
+| Bootstrap gộp seed | | | **+2,9 [+0,7; +5,1]**, p=0,012 |
+
+Dương ở **5/5 seed** (1,6 / 2,9 / 2,7 / 2,8 / 4,5).
+
+**Khử xương CÓ tác dụng thật, nhưng là +2,9 điểm chứ không phải +7,9.**
+Con số 7,9 cũ là ~2,9 thật cộng nhiễu khởi tạo.
+
+**Bài học phương pháp quan trọng nhất của cả dự án:** bootstrap trên MỘT seed
+cho [−0,9; +6,3] chứa 0 → tưởng không có hiệu ứng. Sai. Khoảng đó rộng vì nó
+gộp nhiễu HUẤN LUYỆN vào cái nó trình bày là nhiễu MẪU ẢNH. Phải trung bình
+qua seed TRƯỚC, rồi mới bootstrap theo ảnh quanh trung bình đó.
+Khoảng tin cậy rộng KHÔNG tự động nghĩa là không có hiệu ứng — có thể là đang
+đo nhầm nguồn nhiễu.
+
+**Phát hiện quan trọng nhất cho bài báo — lợi ích rơi vào nhóm DỄ:**
+
+| Mức | Hiệu số @1,0 FP | Khoảng tin cậy |
+|---|---|---|
+| 1 Cực khó | **−0,8** | [−8,6; +7,5] |
+| 2 Rất khó | +1,4 | [−5,8; +8,5] |
+| 3 Trung bình | +1,6 | [−4,5; +8,0] |
+| 4 Tương đối rõ | **+6,3** | **[+1,9; +11,4]** ← chỉ mức này không chứa 0 |
+| 5 Rõ ràng | +10,0 | [−1,4; +20,0] |
+
+Toàn bộ mức tăng 2,9 điểm đến từ nốt VỐN ĐÃ tương đối dễ thấy. Nhóm khó nhất
+có ước lượng ÂM. Đây chính là luận điểm trung tâm ở mục 1, nay có số liệu:
+chỉ số trung bình tăng mà giá trị lâm sàng không tăng.
+
+### Ghi chép cũ 13/09/2026 — bootstrap một seed (đọc kèm phần trên)
 
 Chạy lại 10-fold seed 42 kèm bootstrap bắt cặp (`bootstrap_ci.py`):
 
 | Đối chiếu | Hiệu số CPM | Khoảng tin cậy 95% | Kết luận |
 |---|---|---|---|
-| Khử xương (3 kênh → +U-Net) | **+2,8** | **[−0,9; +6,3]** | CHỨA 0 — không kết luận được |
+| Khử xương (3 kênh → +U-Net) | **+2,8** | **[−0,9; +6,3]** | chứa 0 — nhưng xem cập nhật 14/09: đây là do gộp nhầm nhiễu huấn luyện |
 | Tăng cường khi backbone đóng băng | **−22,1** | **[−28,2; −16,1]** | vững chắc |
 
 Hai điều buộc phải ghi nhớ:

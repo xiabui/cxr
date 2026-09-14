@@ -52,16 +52,20 @@ every stratified figure using an image-level cluster bootstrap.
 
 Three results follow. First, stratification reverses the ordering suggested by
 aggregate CPM: a configuration that looks better on average can be worse on the
-subtle strata. Second, once confidence intervals are computed, the aggregate
-differences between configurations on this dataset are \emph{not} separable
-from sampling noise; a paired bootstrap on the bone-suppression contrast gives
-$\Delta\mathrm{CPM} = +2.8$ points with a 95\% interval of
-$[-0.9, +6.3]$. We further measure a run-to-run spread of roughly four CPM
-points attributable to random initialisation alone, comparable to the effect
-sizes commonly reported as improvements in this literature. Third, and in
-contrast, detection of the most subtle stratum stays between 0\% and 8\% across
-every configuration tested, including one built on a foundation model
-pre-trained on 838{,}000 radiographs.
+subtle strata. Second, bone suppression yields a small but reproducible
+aggregate gain of $+2.9$ CPM points (95\% CI $[+0.7, +5.1]$, positive in all
+five seeds) --- and that gain falls almost entirely on the \emph{easy} strata.
+The only level whose interval excludes zero is level 4, the second-easiest; the
+point estimate on the most subtle level is negative. Reported as one number the
+gain reads as progress on nodule detection; stratified, it is progress on the
+nodules least likely to be missed. Establishing this required separating two
+uncertainties that are usually conflated: a single-run bootstrap on the same
+data gives $[-0.9, +6.3]$ and hides the effect, because a run-to-run spread of
+roughly four CPM points from random initialisation alone is absorbed into what
+that interval presents as sampling error. Third, detection of the most subtle
+stratum stays between 0\% and 8\% across every configuration tested, including
+one built on a foundation model pre-trained on 838{,}000 radiographs, and does
+not move even under a manipulation that halves overall performance.
 
 We do not claim novelty for subtlety-stratified evaluation, which has been
 performed before \todo{cite}, nor for the observation that frozen foundation
@@ -318,34 +322,110 @@ We stress what the level-1 column does \emph{not} show. The difference between
 8.0\% and 4.0\% is one nodule out of 25. It is not evidence that either
 configuration is better, and we do not interpret it as such.
 
-\subsection{Aggregate Differences Do Not Survive Confidence Intervals}
+\subsection{Run-to-Run Variability}
+\label{sec:noise}
 
-Table~\ref{tab:paired} applies the paired bootstrap of
-Section~\ref{sec:bootstrap} to the bone-suppression contrast under ten-fold
-cross-validation. The aggregate difference is $+2.8$ CPM points with a 95\%
-interval of $[-0.9, +6.3]$. The interval contains zero.
+Re-running a configuration with an identical seed and configuration file
+produced a CPM of 40.5\% where 36.5\% had been recorded previously. The cause
+was that the random seed governed the cross-validation split but was never
+applied to the weight initialisation of the detection head. Across five seeds
+the 3-channel configuration scores $40.4 \pm 1.0$ and the bone-suppressed
+configuration $43.3 \pm 1.4$ CPM.
+
+This matters for how the remaining results must be read. A four-point spread
+from initialisation alone is comparable to the effect sizes commonly reported
+as improvements on this benchmark, so a single training run cannot establish
+one.
+
+\subsection{Separating Training Noise from Sampling Noise}
+\label{sec:twonoise}
+
+Two distinct uncertainties act on these numbers, and conflating them leads to
+error in both directions.
+
+Training uncertainty asks whether a re-run reproduces the result; it is
+measured by repeating the experiment across seeds. Sampling uncertainty asks
+whether the result would hold on a different set of 247 images; it is measured
+by the image-level bootstrap of Section~\ref{sec:bootstrap}. Reporting either
+alone is misleading. A bootstrap interval from one training run absorbs
+initialisation noise into what it presents as sampling uncertainty, and is
+correspondingly too wide. A standard deviation across seeds is computed on a
+single fixed image set and says nothing about generalisation.
+
+We therefore take as the primary estimator the \emph{seed-averaged difference},
+and bootstrap images around it: within each resample the same image indices are
+applied to all ten runs, the per-seed difference is computed, and those
+differences are averaged. This averages away training noise while preserving
+sampling uncertainty.
+
+Table~\ref{tab:bone} applies this to the bone-suppression contrast. The
+difference is $+2.9$ CPM points with a 95\% interval of $[+0.7, +5.1]$, and it
+is positive in all five seeds individually.
 
 \begin{table}[t]
 \centering
-\caption{Paired image-level bootstrap for the bone-suppression contrast
-(RAD-DINO, ten-fold, $B = 3000$). $\Delta$ is configuration B minus A.
-Intervals are percentile intervals on the difference.}
-\label{tab:paired}
+\caption{Bone suppression, five seeds, ten-fold cross-validation. Per-seed
+differences are consistently positive. The pooled interval is an image-level
+bootstrap ($B = 2000$) on the seed-averaged difference.}
+\label{tab:bone}
 \begin{tabular}{lccc}
 \toprule
-Metric & A: 3-channel & B: + bone supp. & $\Delta$ [95\% CI] \\
+Seed & 3-channel & + bone supp. & $\Delta$ \\
 \midrule
-CPM                 & 40.5 & 43.3 & $+2.8$ $[-0.9, +6.3]$ \\
-Sens @ 0.5 FP/image & 39.6 & 39.0 & $-0.6$ $[-6.1, +4.9]$ \\
-Sens @ 1.0 FP/image & 44.8 & 46.1 & $+1.3$ $[-4.5, +6.7]$ \\
-Sens @ 4.0 FP/image & 50.6 & 60.4 & $+9.7$ $[+4.0, +15.1]$ \\
+0 & 40.5 & 42.1 & $+1.6$ \\
+1 & 41.9 & 44.8 & $+2.9$ \\
+2 & 39.3 & 42.0 & $+2.7$ \\
+3 & 40.0 & 42.9 & $+2.8$ \\
+4 & 40.2 & 44.7 & $+4.5$ \\
+\midrule
+Mean $\pm$ SD & $40.4 \pm 1.0$ & $43.3 \pm 1.4$ & $+2.9 \pm 1.0$ \\
+\midrule
+\multicolumn{3}{l}{Pooled, image bootstrap [95\% CI]} & $+2.9$ $[+0.7, +5.1]$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Only the operating point at 4.0 false positives per image yields an interval
-excluding zero. That is a false-positive rate too high to be clinically
-useful, and we do not present it as a meaningful gain.
+Two points follow. First, the effect is real but small. A previously recorded
+figure of $+7.9$ points for this contrast does not reproduce; the reproducible
+effect is roughly $+2.9$, and the remainder is attributable to initialisation
+noise in a single-run comparison. Second, a single-seed bootstrap on these same
+data gives $+2.8$ with an interval of $[-0.9, +6.3]$, which contains zero. The
+effect is not absent in that analysis --- it is obscured by training noise that
+the pooled estimator removes.
+
+\subsection{Where the Gain Actually Falls}
+\label{sec:where}
+
+Table~\ref{tab:bonestrat} decomposes the bone-suppression gain by subtlety.
+
+\begin{table}[t]
+\centering
+\caption{Bone-suppression gain by subtlety level at 1.0 FP/image, seed-averaged
+over five seeds with image-level bootstrap intervals.}
+\label{tab:bonestrat}
+\begin{tabular}{lcc}
+\toprule
+Subtlety level & $\Delta$ (points) & 95\% CI \\
+\midrule
+1 --- extremely subtle & $-0.8$ & $[-8.6, +7.5]$ \\
+2 --- very subtle      & $+1.4$ & $[-5.8, +8.5]$ \\
+3 --- moderate         & $+1.6$ & $[-4.5, +8.0]$ \\
+4 --- fairly obvious   & $+6.3$ & $[+1.9, +11.4]$ \\
+5 --- obvious          & $+10.0$ & $[-1.4, +20.0]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The only stratum with an interval excluding zero is level 4, the second-easiest.
+The point estimate on level 1 is negative. The aggregate gain of 2.9 CPM points
+is therefore driven by nodules that were already fairly visible, and there is no
+evidence of improvement where improvement would matter.
+
+This is the central observation of the paper, stated precisely. Bone
+suppression produces a statistically defensible improvement in aggregate CPM.
+Reported as a single number, that improvement would be taken as progress on
+nodule detection. Stratified, it is progress on the nodules a radiologist was
+least likely to miss.
 
 \subsection{One Contrast Does Survive: Augmentation Under a Frozen Backbone}
 
@@ -384,22 +464,6 @@ leaves the hardest stratum exactly where it was, because at 4\% (one nodule of
 25) there is essentially nothing left to lose. We return to this floor effect
 in Section~\ref{sec:floor}.
 
-\subsection{Run-to-Run Variability}
-\label{sec:noise}
-
-Re-running a configuration with an identical seed and configuration file
-produced a CPM of 40.5\% where 36.5\% had been recorded previously. The cause
-was that the random seed governed the cross-validation split but was never
-applied to the weight initialisation of the detection head. The resulting
-spread of roughly four CPM points arises from initialisation alone.
-
-This figure deserves emphasis because it is comparable to the effect sizes
-under study. An architectural change reported as a gain of four to eight CPM
-points on this dataset, measured from a single training run, cannot be
-distinguished from initialisation noise.
-
-\pending{mean $\pm$ SD over 5 seeds for both arms: \texttt{run\_seeds.py}, currently running}
-
 \subsection{The Most Subtle Stratum Resists Every Configuration}
 \label{sec:floor}
 
@@ -431,12 +495,18 @@ and one that aggregate reporting renders invisible in either direction.
 
 \paragraph{What confidence intervals take away.}
 Having argued that stratification reveals structure hidden by aggregation, we
-are obliged to report that most of that structure is not statistically
-resolvable at this sample size. With 25 nodules in the hardest stratum, the
-bootstrap interval on a stratified sensitivity spans tens of percentage points.
-We consider reporting these intervals a requirement rather than an option: a
-stratified analysis without them invites precisely the over-interpretation that
-stratification was meant to prevent.
+must report that much of that structure is not statistically resolvable at this
+sample size. With 25 nodules in the hardest stratum, the bootstrap interval on a
+stratified sensitivity spans tens of percentage points. We consider reporting
+these intervals a requirement rather than an option: a stratified analysis
+without them invites precisely the over-interpretation that stratification was
+meant to prevent.
+
+The bone-suppression result shows that the requirement cuts both ways. Reported
+from one run, its interval contains zero and the effect looks absent; pooled
+over seeds, the effect is real. Wide intervals are not automatically evidence
+of no effect --- they may be evidence that the wrong noise source was
+measured.
 
 \paragraph{Frozen backbones and augmentation.}
 Augmenting the training data while the backbone remained frozen reduced CPM by
@@ -495,12 +565,15 @@ hides the behaviour that matters clinically. Stratifying by radiologist-assigned
 subtlety exposes trade-offs between easy and hard nodules that aggregate CPM
 conceals in both directions.
 
-Attaching confidence intervals to those stratified figures, however, shows that
-on a 247-image dataset most of the differences between configurations are not
-separable from noise --- and that run-to-run variability from random
-initialisation alone is of comparable magnitude. We recommend that studies on
-datasets of this size report image-level bootstrap intervals and multi-seed
-variability as a matter of course.
+Quantifying uncertainty properly requires separating training noise from
+sampling noise. On this dataset a run-to-run spread of roughly four CPM points
+arises from random initialisation alone, large enough that a single-run
+bootstrap interval both overstates sampling uncertainty and can conceal a real
+effect. Averaging over seeds and bootstrapping images around that average
+recovers a bone-suppression gain of $+2.9$ points $[+0.7, +5.1]$ --- and shows
+that the gain sits on the easy strata. We recommend that studies on datasets of
+this size report multi-seed variability and image-level bootstrap intervals
+together, and that they report gains per stratum rather than in aggregate.
 
 One finding survives this scrutiny. Detection of the most subtle nodules
 remains between 0\% and 8\% across every configuration we tested, including one
