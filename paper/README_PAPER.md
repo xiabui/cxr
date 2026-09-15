@@ -1,21 +1,62 @@
 # Bản thảo bài báo — việc còn phải làm
 
-## Trạng thái
+## NƠI NỘP: Journal of Imaging Informatics in Medicine (Springer)
 
-Khung bài đã đủ: Introduction, Related Work, Methods, Results, Discussion,
-Limitations, Conclusion. Phần **Methods viết xong hẳn** vì phương pháp đã chốt.
-Phần **Results còn chờ số** — xem bảng dưới.
+**Q1, và MIỄN PHÍ nếu chọn mô hình thuê bao** khi bài được nhận. Chỉ mất tiền
+nếu chọn open access ($4.890) — đừng chọn.
 
-Biên dịch thử:
+Vì sao chọn nơi này: chính tạp chí đã đăng bài khử bóng xương Ibrahim 2025 mà
+ta trích. Biên tập viên và người phản biện đã quen mảng này, và bài của ta
+chính là phần hạ nguồn mà bài đó bỏ ngỏ (họ đo SSIM/PSNR, ta đo ảnh hưởng tới
+phát hiện).
 
-```bash
-cd paper && pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
-```
+Trượt thì hạ xuống **IJCARS** (Springer, Q2, cũng miễn phí) — không phải viết
+lại. Phương án nhanh: **MELBA** (chỉ $10, phản biện nhanh, nhưng chưa xếp hạng Q).
 
-Mọi chỗ chưa xong hiện **màu đỏ** (`\todo`) hoặc **màu cam** (`\pending`) ngay
-trên bản PDF. Còn thấy màu là chưa nộp được.
+**Tránh:** IEEE Access ($1.995), Scientific Reports (~$2.490), MDPI, Frontiers,
+PLOS — đều thu phí bắt buộc.
+
+Miễn giảm APC gần như không dùng được: hệ thống kiểm tự động qua đơn vị công
+tác, mà ta không có đơn vị. Nên đường thuê bao an toàn hơn hẳn.
 
 ---
+
+## HAI VIỆC CHỈ HAI TÁC GIẢ LÀM ĐƯỢC
+
+1. **Mục Author contributions** — lời khai ai làm gì, không ai viết hộ được.
+   Trong `main.tex` đã có bản nháp gợi ý, sửa cho đúng thực tế rồi xoá `\todo`.
+2. **Đổi repo `github.com/xiabui/cxr` sang PUBLIC trước khi nộp.** Mục Data
+   availability đang ghi code có sẵn ở đó — repo còn riêng tư thì câu đó SAI.
+   Không muốn công khai thì sửa thành "available from the corresponding author
+   on reasonable request".
+
+---
+
+## Hai con số nên tự đối chiếu bản gốc
+
+- **838.000 ảnh** của RAD-DINO — nằm trong abstract nên sai là thấy ngay.
+- `gusarev2017bonesup` có đúng là nguồn bộ 241 cặp ảnh trên Kaggle không.
+
+---
+
+## Trạng thái
+
+Bài 14 trang, biên dịch sạch, không còn `PENDING`. Abstract 256 từ (giới hạn
+Springer thường là 250 — sát, nhưng nếu tạp chí đòi chặt thì cắt đoạn cuối).
+Đã có: 12 trích dẫn, 3 hình, kiểm định ngoại có khoảng tin cậy, mục Declarations
+theo đúng yêu cầu Springer.
+
+Springer nhận nộp tự do định dạng ở vòng đầu, nên KHÔNG cần đổi sang `sn-jnl.cls`
+lúc này. Chỉ đổi khi bài được nhận.
+
+## Còn chạy trên máy chủ
+
+LOOCV có gieo hạt, để thay Bảng 1 (hiện là số chạy đơn lẻ, đã ghi rõ cảnh báo
+trong chú thích bảng). Không chặn việc nộp.
+
+---
+
+## Ghi chú cũ
 
 ## 1. Trích dẫn — ĐÃ XONG (15/09/2026)
 

@@ -37,7 +37,9 @@ Stratum Remains Unsolved}}
 % lỗi dừng mà lặng lẽ BỎ MẤT chữ — "Trần Thị" in ra thành "Trn Th".
 % Viết sai tên người là lỗi không được phép. Nếu sau này đổi sang XeLaTeX
 % hoặc LuaLaTeX thì mới thay bằng chữ Việt trực tiếp được.
-\author{B\`ui V\u{a}n X\'ia \and Tr\`{\^a}n Th\d{\i} Qu\`ynh Nga}
+\author{B\`ui V\u{a}n X\'ia \and Tr\`{\^a}n Th\d{\i} Qu\`ynh Nga \\[2pt]
+\normalsize Independent Researcher, Vietnam \\
+\normalsize \texttt{buivanxia10@gmail.com}}
 \date{}
 
 \begin{document}
@@ -46,51 +48,33 @@ Stratum Remains Unsolved}}
 % =====================================================================
 \begin{abstract}
 \noindent
-Pulmonary nodule detection on chest radiographs is usually reported with a
-single aggregate figure such as the competition performance metric (CPM).
-Because easy nodules outnumber hard ones, that figure is dominated by cases a
-radiologist would already have seen, and it says little about the subtle
-nodules that carry the clinical value. We evaluate three detection
-configurations on the JSRT dataset (247 images, 154 nodules) stratified by the
-five-level radiologist subtlety rating, and we attach confidence intervals to
-every stratified figure using an image-level cluster bootstrap.
+Pulmonary nodule detection on chest radiographs is usually summarised by one
+aggregate figure such as the competition performance metric (CPM). Because easy
+nodules outnumber hard ones, that figure is dominated by cases a radiologist
+would already have seen. We evaluate detection on JSRT (247 images, 154 nodules)
+stratified by the five-level radiologist subtlety rating, attaching an
+image-level cluster bootstrap interval to every figure.
 
-Four results follow. First, stratification reverses the ordering suggested by
-aggregate CPM: a configuration that looks better on average can be worse on the
-subtle strata. Second, bone suppression yields a small but reproducible
-aggregate gain of $+2.9$ CPM points (95\% CI $[+0.7, +5.1]$, positive in all
-five seeds) --- and that gain falls almost entirely on the \emph{easy} strata.
-The only level whose interval excludes zero is level 4, the second-easiest; the
-point estimate on the most subtle level is negative. Reported as one number the
-gain reads as progress on nodule detection; stratified, it is progress on the
-nodules least likely to be missed. Establishing this required separating two
-uncertainties that are usually conflated: a single-run bootstrap on the same
-data gives $[-0.9, +6.3]$ and hides the effect, because a run-to-run spread of
-roughly four CPM points from random initialisation alone is absorbed into what
-that interval presents as sampling error. Third, detection of the most subtle
-stratum stays between 0\% and 8\% across every configuration tested, including
-one built on a foundation model pre-trained on 838{,}000 radiographs, and does
-not move even under a manipulation that halves overall performance.
+Bone suppression, proposed but not tested by earlier stratified work on this
+dataset, yields a reproducible gain of $+2.9$ CPM points (95\% CI
+$[+0.7, +5.1]$, positive across five seeds). Stratified, that gain falls almost
+entirely on the easy levels: only level 4 excludes zero, and the estimate for
+the most subtle level is negative. Establishing this required separating
+training from sampling uncertainty, which are routinely conflated: a single-run
+bootstrap gives $[-0.9, +6.3]$ and hides the effect, because roughly four CPM
+points of run-to-run spread from random initialisation are absorbed into what
+that interval presents as sampling error.
 
-Fourth, we test rather than assert the usual explanation for why data
-augmentation degrades a frozen-backbone detector. Augmentation costs 22.1 CPM
-points with the backbone frozen; unfreezing four transformer blocks reduces that
-penalty to 3.1 points with an interval containing zero, supporting the account
-that the damage comes from the backbone's inability to adapt rather than from
-augmentation itself.
+Detection of the most subtle stratum stays between 0\% and 8\% across every
+configuration, including one built on a backbone pre-trained on 838{,}000
+radiographs, and does not move even under a manipulation that halves overall
+performance. Applied unchanged to 1{,}426 VinDr-CXR images, the detector reaches
+16.5\% $[14.7, 18.3]$ against 43.3\% internally, under a match tolerance more
+generous than the internal one.
 
-We do not claim novelty for subtlety-stratified evaluation, which
-Horry~et~al.~\cite{horry2023fullres} performed on this dataset, nor for the
-observation that frozen foundation features suppress small-lesion signal, which
-Muthyala~et~al.~\cite{muthyala2026frozen} report independently. Our
-contribution is to quantify the uncertainty that stratified evaluation on a
-247-image dataset actually carries, and to show that this uncertainty is large
-enough to absorb most published effect sizes on this benchmark.
-
-Applied unchanged to 1{,}426 VinDr-CXR images with 1{,}795 nodules, the same
-detector reaches a CPM of 16.5\% $[14.7, 18.3]$ under a match tolerance more
-generous than the internal one --- against 43.3\% internally. Careful internal
-uncertainty quantification did not anticipate that gap.
+We claim no novelty for stratified evaluation or for the frozen-backbone
+observation, both reported previously. Our contribution is the uncertainty such
+evaluation actually carries.
 
 \medskip
 \noindent\textbf{Keywords:} chest radiography, nodule detection, subtlety
@@ -809,6 +793,53 @@ augmentation harms a frozen-backbone detector because the backbone cannot adapt
 is the kind of plausible aside this literature usually leaves unexamined;
 unfreezing four blocks reduces the penalty from 22.1 points to 3.1, and the
 account holds.
+
+% =====================================================================
+% =====================================================================
+% Springer yêu cầu mục "Declarations" đặt NGAY TRƯỚC danh mục tài liệu.
+% Thiếu mục này là bị trả lại từ khâu biên tập, chưa tới tay phản biện.
+\section*{Declarations}
+
+\paragraph{Funding.}
+No funding was received for this work.
+
+\paragraph{Conflicts of interest.}
+The authors declare no competing interests.
+
+\paragraph{Ethics approval.}
+Not required. This study used only publicly available, fully de-identified
+imaging datasets and involved no human participants, no patient recruitment and
+no access to identifiable records.
+
+\paragraph{Consent to participate and for publication.}
+Not applicable, for the reason stated above.
+
+\paragraph{Data availability.}
+All data are third-party and publicly available; we redistribute none of it.
+JSRT is available from the Japanese Society of Radiological
+Technology~\cite{shiraishi2000jsrt}. NIH ChestX-ray14 is available from the
+NIH Clinical Center~\cite{wang2017chestxray}. VinDr-CXR images and annotations
+are available through the VinBigData Kaggle competition, whose terms must be
+accepted before download, and through PhysioNet~\cite{nguyen2022vindr}. Note
+that the Kaggle release provides the three-reader training split we used; the
+five-reader consensus test split is available only through PhysioNet.
+
+\paragraph{Code availability.}
+\todo{Đổi repo github.com/xiabui/cxr sang PUBLIC trước khi nộp, hoặc sửa câu
+dưới thành ``available from the corresponding author on reasonable request''.
+Hiện repo đang ở chế độ riêng tư, nên câu này CHƯA đúng.}
+Analysis code, including the bootstrap and multi-seed tooling, is available at
+\url{https://github.com/xiabui/cxr}. Per-image raw detection scores are released
+with the code, so every confidence interval reported here can be recomputed
+without retraining.
+
+\paragraph{Author contributions.}
+\todo{HAI TÁC GIẢ TỰ XÁC NHẬN MỤC NÀY. Đây là lời khai về việc ai làm gì, không
+ai viết hộ được. Bản nháp gợi ý, sửa cho đúng thực tế: ``B.V.X. designed the
+study, implemented the detection and evaluation pipeline, ran the experiments
+and drafted the manuscript. T.T.Q.N. contributed to the experimental design and
+the statistical analysis, and revised the manuscript. Both authors read and
+approved the final manuscript.''}
 
 % =====================================================================
 \section*{Reproducibility}
