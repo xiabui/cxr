@@ -1,5 +1,27 @@
 # Bản thảo bài báo — việc còn phải làm
 
+## LINK NỘP BÀI
+
+| | |
+|---|---|
+| **Nộp bài (Editorial Manager)** | <https://www.editorialmanager.com/jdim/default2.aspx> |
+| Hướng dẫn cho tác giả | <https://link.springer.com/journal/10278/submission-guidelines> |
+| Trang tạp chí | <https://link.springer.com/journal/10278> |
+
+**Khi hệ thống hỏi chọn mô hình xuất bản, chọn SUBSCRIPTION.** Chọn open access
+là mất $4.890. Subscription miễn phí hoàn toàn, và bạn vẫn được tự đăng bản thảo
+lên arXiv (green open access).
+
+### Nơi dự phòng nếu trượt
+
+| Nơi | Hạng | Link nộp |
+|---|---|---|
+| IJCARS (Springer) | Q2 | <https://link.springer.com/journal/11548> |
+| Computerized Medical Imaging & Graphics (Elsevier) | Q1 | <https://www.editorialmanager.com/compmedimag/> |
+| MELBA (chỉ $10, phản biện nhanh) | chưa xếp Q | <https://melba.scholasticahq.com/> |
+
+---
+
 ## NƠI NỘP: Journal of Imaging Informatics in Medicine (Springer)
 
 **Q1, và MIỄN PHÍ nếu chọn mô hình thuê bao** khi bài được nhận. Chỉ mất tiền

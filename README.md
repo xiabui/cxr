@@ -68,3 +68,30 @@ Khi chạy dài như LOOCV, dùng tmux và tăng giới hạn file descriptor:
 ulimit -n 65535
 tmux new -s run
 ```
+
+---
+
+## Bài báo
+
+| | |
+|---|---|
+| Bản thảo tiếng Anh | `paper/main.tex` → `paper/main.pdf` |
+| Bản thảo tiếng Việt | `paper/main_vi.tex` → `paper/main_vi.pdf` |
+| Việc còn lại + hướng dẫn | `paper/README_PAPER.md` |
+
+**Nộp bài:** <https://www.editorialmanager.com/jdim/default2.aspx>
+(Journal of Imaging Informatics in Medicine, Springer, Q1)
+
+Khi hệ thống hỏi mô hình xuất bản, **chọn subscription** — miễn phí. Chọn open
+access là mất $4.890.
+
+Biên dịch:
+
+```bash
+cd paper
+pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
+xelatex main_vi.tex && bibtex main_vi && xelatex main_vi.tex && xelatex main_vi.tex
+```
+
+Bản tiếng Việt phải dùng **xelatex**, không dùng pdflatex: pdflatex nuốt mất các
+chữ như ầ và ị mà không báo lỗi.

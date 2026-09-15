@@ -29,8 +29,7 @@
 \newcommand{\pending}[1]{\textcolor{orange}{\textbf{[PENDING: #1]}}}
 
 \title{\textbf{Subtlety-Stratified Evaluation of Nodule Detection in Chest
-Radiographs: Aggregate Gains Land on the Easiest Cases While the Hardest
-Stratum Remains Unsolved}}
+Radiographs: Aggregate Gains Replicate, Their Stratified Attribution Does Not}}
 
 % TÊN TÁC GIẢ VIẾT BẰNG MACRO, ĐỪNG THAY BẰNG CHỮ VIỆT TRỰC TIẾP.
 % pdflatex + inputenc KHÔNG đọc được ầ (U+1EA7) và ị (U+1ECB): nó không báo
@@ -147,12 +146,11 @@ Our contributions:
         rather than to a change of criterion.
 \end{enumerate}
 
-All quantitative claims rest on ten-fold cross-validation with fixed seeds and
-retained per-image scores, so every interval in this paper can be recomputed
-without retraining, and the threshold experiment above can be reproduced from
-the released scores alone. Leave-one-out figures from our earlier experiments
-appear once, in Table~\ref{tab:loocv}, explicitly marked as single unseeded
-runs.
+Every configuration we draw a conclusion from was run with a fixed seed and
+its per-image scores retained, so all intervals in this paper can be recomputed
+from the released scores without retraining. Two rows of Table~\ref{tab:loocv}
+come from earlier runs that were neither seeded nor score-retaining; they are
+labelled as such, and no claim rests on them.
 
 We make no claim of priority. Horry~et~al.~\cite{horry2023fullres} analysed
 JSRT by subtlety with a full-resolution encoder--decoder, observed the same
@@ -160,8 +158,9 @@ collapse on the lowest strata, and proposed the specific remedy we evaluate:
 ``Rib and bone suppression techniques \ldots could be expected to improve both
 sensitivities of this algorithm and reduce false positive rates.'' They did not
 evaluate it, reporting instead that the work was underway. This paper tests that
-proposal, and finds the improvement real but confined to the strata their
-analysis showed were never the problem.
+proposal. The improvement is real and replicates across two cross-validation
+protocols; which difficulty stratum supplies it does not replicate, and the
+stratum their analysis identified as the problem moves under neither.
 
 % =====================================================================
 \section{Related Work}

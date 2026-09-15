@@ -32,9 +32,27 @@ from bootstrap_ci import load_scores, evaluate
 COLORS = {"plain": "#0072B2", "unet": "#D55E00", "aug": "#009E73"}
 MARKS = {"plain": "o", "unet": "s", "aug": "^"}
 LINES = {"plain": "-", "unet": "--", "aug": ":"}
-SUB_SHORT = {1: "1\nrất kín đáo", 2: "2", 3: "3", 4: "4", 5: "5\nrõ ràng"}
 SUB_EN = {1: "1\nextremely\nsubtle", 2: "2\nvery\nsubtle", 3: "3\nmoderate",
           4: "4\nfairly\nobvious", 5: "5\nobvious"}
+SUB_VI = {1: "1\ncực khó\nthấy", 2: "2\nrất khó\nthấy", 3: "3\ntrung bình",
+          4: "4\ntương đối\nrõ", 5: "5\nrõ ràng"}
+
+# Nhãn theo ngôn ngữ. Bản tiếng Việt cần font có dấu — matplotlib mặc định
+# (DejaVu Sans) có đủ ký tự tiếng Việt nên không phải cài thêm.
+T = {
+ "en": {"fp": "False positives per image", "sens": "Sensitivity (%)",
+        "sens1": "Sensitivity at 1.0 FP/image (%)", "lev": "Subtlety level",
+        "delta": "Change from bone suppression (points)",
+        "plain": "RAD-DINO, 3-channel", "unet": "+ bone suppression",
+        "aug": "+ augmentation", "sub": SUB_EN, "cpm": "CPM (aggregate)",
+        "subt": "Subtlety {}"},
+ "vi": {"fp": "Dương tính giả mỗi ảnh", "sens": "Độ nhạy (%)",
+        "sens1": "Độ nhạy tại 1,0 FP/ảnh (%)", "lev": "Mức độ khó thấy",
+        "delta": "Mức thay đổi do khử bóng xương (điểm)",
+        "plain": "RAD-DINO, 3 kênh lặp", "unet": "+ khử bóng xương",
+        "aug": "+ tăng cường dữ liệu", "sub": SUB_VI, "cpm": "CPM (tổng thể)",
+        "subt": "Mức {}"},
+}
 
 
 def style():
@@ -70,7 +88,7 @@ def band(arr):
 
 
 # ------------------------------------------------------------------ hình 1
-def fig_froc(runs, out, B, seed):
+def fig_froc(runs, out, B, seed, L):
     fig, ax = plt.subplots(figsize=(3.4, 2.7))
     rng = np.random.RandomState(seed)
     for key, (label, d) in runs.items():
@@ -89,18 +107,18 @@ def fig_froc(runs, out, B, seed):
     ax.xaxis.set_minor_formatter(NullFormatter())
     ax.xaxis.set_major_locator(FixedLocator([0.125, 0.25, 0.5, 1, 2, 4]))
     ax.set_xticklabels(["0.125", "0.25", "0.5", "1", "2", "4"])
-    ax.set_xlabel("False positives per image")
-    ax.set_ylabel("Sensitivity (%)")
+    ax.set_xlabel(L["fp"])
+    ax.set_ylabel(L["sens"])
     ax.set_ylim(0, 80)
     ax.legend(loc="upper left", fontsize=7)
     fig.tight_layout(pad=0.3)
-    p = os.path.join(out, "fig_froc.pdf")
+    p = os.path.join(out, "fig_froc" + ("_vi" if L["fp"].startswith("D") else "") + ".pdf")
     fig.savefig(p); plt.close(fig)
     print("  ", p)
 
 
 # ------------------------------------------------------------------ hình 2
-def fig_strat(runs, out, B, seed):
+def fig_strat(runs, out, B, seed, L):
     fig, ax = plt.subplots(figsize=(3.4, 2.7))
     rng = np.random.RandomState(seed)
     offs = {"plain": -0.18, "unet": 0.0, "aug": 0.18}
@@ -114,20 +132,20 @@ def fig_strat(runs, out, B, seed):
         ax.errorbar(xs, y, yerr=err, fmt=MARKS[key], color=COLORS[key],
                     markersize=3.6, linewidth=0, elinewidth=0.9,
                     capsize=1.8, capthick=0.9, label=label, zorder=3)
-    ax.set_xticks(list(SUB_EN))
-    ax.set_xticklabels([SUB_EN[s] for s in SUB_EN], fontsize=6)
-    ax.set_xlabel("Subtlety level")
-    ax.set_ylabel("Sensitivity at 1.0 FP/image (%)")
+    ax.set_xticks(list(L["sub"]))
+    ax.set_xticklabels([L["sub"][s] for s in L["sub"]], fontsize=6)
+    ax.set_xlabel(L["lev"])
+    ax.set_ylabel(L["sens1"])
     ax.set_ylim(-5, 105)
     ax.legend(loc="upper left", fontsize=7)
     fig.tight_layout(pad=0.3)
-    p = os.path.join(out, "fig_strat.pdf")
+    p = os.path.join(out, "fig_strat" + ("_vi" if L["fp"].startswith("D") else "") + ".pdf")
     fig.savefig(p); plt.close(fig)
     print("  ", p)
 
 
 # ------------------------------------------------------------------ hình 3
-def fig_forest(pairs, out, B, seed):
+def fig_forest(pairs, out, B, seed, L):
     """Hiệu số do khử xương, trung bình qua các seed, bootstrap theo ảnh."""
     ids = pairs[0][0]["ids"]
     def repack(d):
@@ -156,7 +174,7 @@ def fig_forest(pairs, out, B, seed):
             bt[k][b] = np.nanmean([ev_b[i].get(k, np.nan) - ev_a[i].get(k, np.nan)
                                    for i in range(len(PA))])
 
-    labels = [f"Subtlety {s}" for s in subs] + ["CPM (aggregate)"]
+    labels = [L["subt"].format(s) for s in subs] + [L["cpm"]]
     ys = np.arange(len(keys))[::-1]
     fig, ax = plt.subplots(figsize=(3.6, 2.5))
     ax.axvline(0, color="#888888", linewidth=0.8, zorder=1)
@@ -171,10 +189,10 @@ def fig_forest(pairs, out, B, seed):
                 markersize=4.2 if k == "cpm" else 3.6,
                 markeredgecolor="white", markeredgewidth=0.5, zorder=3)
     ax.set_yticks(ys); ax.set_yticklabels(labels, fontsize=7)
-    ax.set_xlabel("Change from bone suppression (points)")
+    ax.set_xlabel(L["delta"])
     ax.grid(axis="y", visible=False)
     fig.tight_layout(pad=0.3)
-    p = os.path.join(out, "fig_forest.pdf")
+    p = os.path.join(out, "fig_forest" + ("_vi" if L["fp"].startswith("D") else "") + ".pdf")
     fig.savefig(p); plt.close(fig)
     print("  ", p)
     for k, l in zip(keys, labels):
@@ -188,20 +206,21 @@ def main(a):
     # CẢ BA phải cùng một seed. Bản trước lấy plain/unet ở seed 0 nhưng
     # augmentation ở seed 42 — trộn seed trong cùng một hình thì phần chênh
     # lệch giữa các đường lẫn cả nhiễu khởi tạo, không còn đọc được.
+    L = T[a.lang]
     runs = {
-        "plain": ("RAD-DINO, 3-channel", load_scores("runs/scores_raddino_plain.json")),
-        "unet":  ("+ bone suppression",  load_scores("runs/scores_unet_kfold.json")),
-        "aug":   ("+ augmentation",      load_scores("runs/scores_unetaug_kfold.json")),
+        "plain": (L["plain"], load_scores("runs/scores_raddino_plain.json")),
+        "unet":  (L["unet"],  load_scores("runs/scores_unet_kfold.json")),
+        "aug":   (L["aug"],      load_scores("runs/scores_unetaug_kfold.json")),
     }
     seeds = {k: d.get("seed") for k, (_, d) in runs.items()}
     assert len(set(seeds.values())) == 1, f"LỆCH SEED giữa các cấu hình: {seeds}"
     print(f"Tất cả cấu hình dùng seed {next(iter(seeds.values()))}")
     print("Đang vẽ:")
-    fig_froc(runs, a.out, a.B, a.seed)
-    fig_strat(runs, a.out, a.B, a.seed)
+    fig_froc(runs, a.out, a.B, a.seed, L)
+    fig_strat(runs, a.out, a.B, a.seed, L)
     pairs = [(load_scores(f"runs/scores_plain_s{i}.json"),
               load_scores(f"runs/scores_unet_s{i}.json")) for i in range(5)]
-    fig_forest(pairs, a.out, a.B, a.seed)
+    fig_forest(pairs, a.out, a.B, a.seed, L)
 
 
 if __name__ == "__main__":
@@ -209,4 +228,5 @@ if __name__ == "__main__":
     p.add_argument("--out", default="paper/fig")
     p.add_argument("--B", type=int, default=1000)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--lang", choices=["en", "vi"], default="en")
     main(p.parse_args())
