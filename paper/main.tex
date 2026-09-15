@@ -51,31 +51,31 @@ Pulmonary nodule detection on chest radiographs is usually summarised by one
 aggregate figure such as the competition performance metric (CPM). Because easy
 nodules outnumber hard ones, that figure is dominated by cases a radiologist
 would already have seen. We evaluate detection on JSRT (247 images, 154 nodules)
-stratified by the five-level radiologist subtlety rating, attaching an
-image-level cluster bootstrap interval to every figure.
+stratified by the five-level radiologist subtlety rating, with an image-level
+cluster bootstrap interval on every figure.
 
 Bone suppression, proposed but not tested by earlier stratified work on this
-dataset, raises aggregate CPM reproducibly: $+2.9$ points
-$[+0.7, +5.1]$ across five seeds under ten-fold, and $+4.3$ $[+0.7, +8.6]$ under
-leave-one-out. \emph{Where} that gain sits does not replicate --- ten-fold
-attributes it to the second-easiest stratum, leave-one-out to the second-hardest
---- and we report this rather than resolve it, because at 12--50 nodules per
-stratum a per-stratum estimate cannot carry a mechanistic claim.
+dataset, raises aggregate CPM reproducibly: $+2.9$ $[+0.7, +5.1]$ across five
+seeds under ten-fold, and $+4.3$ $[+0.7, +8.6]$ under leave-one-out. \emph{Where}
+that gain sits does not replicate --- ten-fold attributes it to the
+second-easiest stratum, leave-one-out to the second-hardest. We report this
+rather than resolve it: at 12--50 nodules per stratum, a per-stratum estimate
+cannot carry a mechanistic claim.
 
-Establishing even the aggregate effect required separating training from
-sampling uncertainty, which are routinely conflated: a single-run bootstrap
-gives $[-0.9, +6.3]$ and hides the effect, because roughly four CPM points of
-run-to-run spread from random initialisation are absorbed into what that
-interval presents as sampling error.
+Establishing even that aggregate effect required separating training from
+sampling uncertainty, which are routinely conflated: a single-run bootstrap gives
+$[-0.9, +6.3]$ and hides it, because roughly four CPM points of run-to-run spread
+from random initialisation are absorbed into what that interval presents as
+sampling error.
 
 Detection of the most subtle stratum stays between 0\% and 8\% under every
 configuration and both protocols, and does not move even under a manipulation
 that halves overall performance. Applied unchanged to 1{,}426 VinDr-CXR images,
-the detector reaches 16.5\% $[14.7, 18.3]$ against 43.3\% internally, under a
-match tolerance more generous than the internal one.
+the detector reaches 16.5\% $[14.7, 18.3]$ against 43.3\% internally.
 
-We claim no novelty for stratified evaluation or for the frozen-backbone
-observation, both reported previously.
+This is a study of evaluation methodology, not a proposed clinical system, with
+JSRT as its case study. We claim no novelty for stratified evaluation or for the
+frozen-backbone observation, both reported previously.
 
 \medskip
 \noindent\textbf{Keywords:} chest radiography, nodule detection, subtlety
@@ -115,6 +115,15 @@ makes a per-stratum result clinically interpretable rather than an arbitrary
 partition. This paper uses that rating in two ways. We report
 sensitivity per stratum rather than in aggregate, and, more importantly, we
 attach a confidence interval to every stratified figure.
+
+This is a paper about how detection performance is measured, not a proposal
+for a clinical system. JSRT serves as a case study rather than a target: it is
+small, single-source and single-nodule, but it is the one public chest-radiograph
+dataset carrying a validated per-nodule difficulty scale, which is what makes the
+questions we ask answerable at all. The procedures we describe --- stratified
+reporting, image-level intervals, separation of training from sampling noise ---
+apply to any detection study, and their consequences are most visible, not least
+valid, at this sample size.
 
 The second step turns out to matter more than the first. Stratifying 154
 nodules into five levels leaves 25 nodules in the hardest stratum and 12 in the
@@ -873,9 +882,13 @@ generalisation.
         positives per image internally and 76.7\% at 7.6 externally --- the
         latter with the two hardest subtlety categories excluded from training,
         and at a false-positive rate roughly twice the highest we report. We
-        retained every stratum and evaluate up to 4 FP/image, so the figures are
-        not comparable term for term; the gap in absolute performance is
-        nonetheless real. We report
+        retained every stratum and evaluate up to 4 FP/image. The figures are
+        therefore not comparable term for term, and the comparison illustrates
+        the paper's point rather than settling it: an aggregate sensitivity is
+        defined partly by which difficulty strata are admitted, so two numbers
+        from different strata sets measure different quantities. A gap in
+        absolute performance between us remains, and we do not claim otherwise.
+        We report
         relative comparisons under a controlled protocol rather than competing
         on absolute performance.
   \item \textbf{Benchmark contamination.} JSRT forms part of the NODE21
@@ -959,21 +972,14 @@ that the Kaggle release provides the three-reader training split we used; the
 five-reader consensus test split is available only through PhysioNet.
 
 \paragraph{Code availability.}
-\todo{Đổi repo github.com/xiabui/cxr sang PUBLIC trước khi nộp, hoặc sửa câu
-dưới thành ``available from the corresponding author on reasonable request''.
-Hiện repo đang ở chế độ riêng tư, nên câu này CHƯA đúng.}
+\todo{BEFORE SUBMISSION: make the repository public, or replace the sentence below with ``available from the corresponding author on reasonable request''. The repository is currently private, so the sentence as written is false.}
 Analysis code, including the bootstrap and multi-seed tooling, is available at
 \url{https://github.com/xiabui/cxr}. Per-image raw detection scores are released
 with the code, so every confidence interval reported here can be recomputed
 without retraining.
 
 \paragraph{Author contributions.}
-\todo{HAI TÁC GIẢ TỰ XÁC NHẬN MỤC NÀY. Đây là lời khai về việc ai làm gì, không
-ai viết hộ được. Bản nháp gợi ý, sửa cho đúng thực tế: ``B.V.X. designed the
-study, implemented the detection and evaluation pipeline, ran the experiments
-and drafted the manuscript. T.T.Q.N. contributed to the experimental design and
-the statistical analysis, and revised the manuscript. Both authors read and
-approved the final manuscript.''}
+\todo{BEFORE SUBMISSION: both authors must write and confirm this statement themselves. Suggested draft, to be corrected to fact: ``B.V.X. designed the study, implemented the detection and evaluation pipeline, ran the experiments and drafted the manuscript. T.T.Q.N. contributed to the experimental design and the statistical analysis, and revised the manuscript. Both authors read and approved the final manuscript.''}
 
 % =====================================================================
 \section*{Reproducibility}
