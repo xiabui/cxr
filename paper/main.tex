@@ -74,9 +74,10 @@ penalty to 3.1 points with an interval containing zero, supporting the account
 that the damage comes from the backbone's inability to adapt rather than from
 augmentation itself.
 
-We do not claim novelty for subtlety-stratified evaluation, which has been
-performed before \todo{cite}, nor for the observation that frozen foundation
-features suppress small-lesion signal, reported independently \todo{cite}. Our
+We do not claim novelty for subtlety-stratified evaluation, which
+Horry~et~al.~\cite{horry2023fullres} performed on this dataset, nor for the
+observation that frozen foundation features suppress small-lesion signal, which
+Muthyala~et~al.~\cite{muthyala2026frozen} report independently. Our
 contribution is to quantify the uncertainty that stratified evaluation on a
 247-image dataset actually carries, and to show that this uncertainty is large
 enough to absorb most published effect sizes on this benchmark.
@@ -141,10 +142,14 @@ retained per-image scores, so every interval in this paper can be recomputed
 without retraining. Leave-one-out figures from our earlier experiments appear
 once, in Table~\ref{tab:loocv}, explicitly marked as single unseeded runs.
 
-We make no claim of priority. Subtlety-stratified analysis of JSRT has been
-carried out before, and the specific remedy we evaluate --- bone suppression
---- was proposed in that earlier work as a promising direction left untested
-\todo{cite}. This paper tests it.
+We make no claim of priority. Horry~et~al.~\cite{horry2023fullres} analysed
+JSRT by subtlety with a full-resolution encoder--decoder, observed the same
+collapse on the lowest strata, and proposed the specific remedy we evaluate:
+``Rib and bone suppression techniques \ldots could be expected to improve both
+sensitivities of this algorithm and reduce false positive rates.'' They did not
+evaluate it, reporting instead that the work was underway. This paper tests that
+proposal, and finds the improvement real but confined to the strata their
+analysis showed were never the problem.
 
 % =====================================================================
 \section{Related Work}
@@ -153,22 +158,34 @@ carried out before, and the specific remedy we evaluate --- bone suppression
 \todo{2--3 sentences on CXR nodule detection approaches, with citations}
 
 \paragraph{Subtlety-stratified evaluation.}
-Stratifying JSRT results by the subtlety rating is not new. \todo{cite} report
-a full-resolution encoder--decoder architecture evaluated per subtlety level,
-and observe the same collapse on the lowest levels that we observe here. That
-work proposes bone suppression as a plausible remedy but does not evaluate it.
-Our study should be read as a test of that proposal rather than as an
-independent idea.
+Stratifying JSRT results by the subtlety rating is not new.
+Horry~et~al.~\cite{horry2023fullres} evaluate a full-resolution
+encoder--decoder per subtlety level and observe the same collapse on the lowest
+levels that we observe here. That work proposes bone suppression as a plausible
+remedy but does not evaluate it. Our study should be read as a test of that
+proposal rather than as an independent idea.
 
 \paragraph{Bone suppression.}
-\todo{2--3 sentences on bone suppression in CXR, with citations}
+Suppressing rib and clavicle shadows is an established pre-processing step, and
+recent generative models reconstruct bone-free radiographs with high fidelity
+--- Ibrahim~et~al.~\cite{ibrahim2025bonesup} report SSIM $0.99$ on JSRT. That
+literature is evaluated on image-reconstruction quality, not on whether
+suppression improves lesion \emph{detection}, and never per subtlety stratum.
+The gap we address is the downstream one.
 
 \paragraph{Foundation models for medical imaging.}
-RAD-DINO~\cite{perezgarcia2024raddino} is a self-supervised vision transformer trained on a large
-corpus of chest radiographs. Frozen foundation-model features have been
-reported to lose sensitivity to small lesions
-\todo{cite the 2026 frozen-foundation paper}; our results agree, and we treat this as an
-independent replication of that finding rather than as our own discovery.
+RAD-DINO~\cite{perezgarcia2024raddino} is a self-supervised vision transformer
+trained on a large corpus of chest radiographs.
+Muthyala~et~al.~\cite{muthyala2026frozen} probe five frozen vision transformers,
+RAD-DINO among them, and show that small-lesion signal is discarded at the
+global-aggregation step while remaining recoverable from patch tokens. Their
+evidence is classification AUC on NIH-CXR14, MIMIC-CXR, Emory-CXR and
+ChestX-Det10; ours is detection on JSRT stratified by subtlety. The two are
+complementary, and we treat their result as the prior finding rather than our
+own discovery. We note that our decoder consumes patch tokens rather than the
+class token --- the configuration their analysis identifies as retaining the
+signal --- so our persistent failure on the most subtle stratum is not
+explained by global aggregation alone.
 
 \paragraph{Benchmarks and contamination.}
 JSRT is included in the training data of NODE21~\cite{sogancioglu2024node21}, the current
@@ -634,7 +651,7 @@ entirely.
 
 \paragraph{Relation to prior findings.}
 Our observation that frozen foundation features lose small-lesion signal
-reproduces a result published independently \todo{cite the 2026 frozen-foundation paper}. We regard the
+reproduces a result published independently~\cite{muthyala2026frozen}. We regard the
 agreement of two independent studies as more informative than either alone, and
 we claim no priority.
 
@@ -663,7 +680,9 @@ generalisation.
         a single seed, so it supports a qualitative conclusion about the
         augmentation penalty but not a precise effect size.
   \item \textbf{Performance below published work.} Our absolute CPM values are
-        lower than results reported by others on JSRT \todo{cite}. We report
+        lower than results reported by others on JSRT, including
+        Horry~et~al.~\cite{horry2023fullres}, who reach 85\% sensitivity at 8
+        false positives per image. We report
         relative comparisons under a controlled protocol rather than competing
         on absolute performance.
   \item \textbf{Benchmark contamination.} JSRT forms part of the NODE21

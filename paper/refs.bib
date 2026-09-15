@@ -87,24 +87,51 @@
 % NHÓM 2 — BẠN PHẢI TỰ ĐIỀN. Mình cố tình để trống.
 % ---------------------------------------------------------------------
 
-% BẮT BUỘC. Bài phân tích JSRT theo subtlety bằng kiến trúc encoder-decoder
-% full-resolution, và ĐỀ XUẤT khử bóng xương như hướng khắc phục.
-% Đây là bài định vị toàn bộ đóng góp của chúng ta: bài báo này KIỂM CHỨNG
-% chính đề xuất mà họ để ngỏ. Thiếu trích dẫn này thì phần Related Work
-% và câu cuối phần Introduction đều sụp.
-@article{TODO-subtlety-prior,
-  title  = {CHUA DIEN},
-  author = {CHUA DIEN},
-  year   = {0000}
+% ĐÃ TÌM VÀ XÁC MINH BẰNG TOÀN VĂN (14/09/2026).
+% Bài phân tích JSRT theo subtlety và ĐỀ XUẤT khử bóng xương mà KHÔNG kiểm.
+% Nguyên văn: "Rib and bone suppression techniques such as dual energy CXR
+% image acquisition could be expected to improve both sensitivities of this
+% algorithm and reduce false positive rates." Và ở Kết luận: "The team is
+% currently working on a full-resolution rib and bone suppression system".
+% Đây là bài định vị toàn bộ đóng góp của ta: ta KIỂM CHỨNG đề xuất họ để ngỏ.
+@article{horry2023fullres,
+  title   = {Full-Resolution Lung Nodule Localization From Chest X-Ray Images
+             Using Residual Encoder-Decoder Networks},
+  author  = {Horry, Michael and Chakraborty, Subrata and Pradhan, Biswajeet and
+             Paul, Manoranjan and Zhu, Jing and Barua, Prabal Datta and
+             Acharya, U. Rajendra and Chen, Fang and Zhou, Jianlong},
+  journal = {IEEE Access},
+  volume  = {11},
+  year    = {2023},
+  doi     = {10.1109/ACCESS.2023.3343451},
+  note    = {bản tiền ấn arXiv:2307.06547}
 }
 
-% BẮT BUỘC. Bài 2026 công bố độc lập rằng mô hình nền ĐÓNG BĂNG làm mất tín
-% hiệu tổn thương nhỏ. Bài của ta tái lập kết quả này, nên phải dẫn, nếu
-% không sẽ thành tuyên bố phát hiện mới — đúng điều CLAUDE.md mục 9 cấm.
-@article{TODO-frozen-foundation-2026,
-  title  = {CHUA DIEN},
-  author = {CHUA DIEN},
-  year   = {2026}
+% ĐÃ TÌM VÀ XÁC MINH (14/09/2026).
+% Mô hình nền ĐÓNG BĂNG làm mất tín hiệu tổn thương nhỏ. Có thử NGAY RAD-DINO.
+% Nhưng là PHÂN LOẠI (AUC) trên NIH/MIMIC/Emory/ChestX-Det10, KHÔNG phải phát
+% hiện trên JSRT, KHÔNG dùng nhãn subtlety, KHÔNG động tới khử xương hay tăng
+% cường, KHÔNG có khoảng tin cậy. Bổ trợ chứ không trùng.
+@article{muthyala2026frozen,
+  title   = {Frozen Foundation-Model Embeddings Discard Small-Lesion Signal in
+             Chest Radiography: Implications for Pre-Deployment Evaluation},
+  author  = {Muthyala, Raajitha and Yin, Zhenan and Jilla, Alekhya and
+             Li, Frank and Dapamede, Theo and Khosravi, Bardia and
+             Chavoshi, Mohammadreza and Gichoya, Judy and
+             Purkayastha, Saptarshi},
+  journal = {arXiv preprint arXiv:2606.11606},
+  year    = {2026}
+}
+
+% Khử bóng xương hiện đại nhưng chỉ đo CHẤT LƯỢNG ẢNH (SSIM 0,99; PSNR 36,14
+% trên JSRT), KHÔNG đo ảnh hưởng tới phát hiện nốt. Dẫn để chỉ ra khoảng trống.
+@article{ibrahim2025bonesup,
+  title   = {Facilitating Radiograph Interpretation: Refined Generative Models
+             for Precise Bone Suppression in Chest X-rays},
+  author  = {Ibrahim, Samar and Selim, Sahar and Elattar, Mustafa},
+  journal = {Journal of Imaging Informatics in Medicine},
+  year    = {2025},
+  doi     = {10.1007/s10278-025-01461-2}
 }
 
 % Nguồn dữ liệu 241 cặp ảnh khử bóng xương (Kaggle
