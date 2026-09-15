@@ -37,7 +37,7 @@ Ràng buộc lặp lại nhiều lần: **6GB VRAM**. Luôn chạy với
 
 | Tập | Vai trò | Ghi chú |
 |---|---|---|
-| JSRT (247 ảnh) | fine-tune + đánh giá | 154 nốt + 93 ảnh bình thường; nhãn subtlety 1-5 từ ROC của 20 bác sĩ; nốt xác nhận bằng CT |
+| JSRT (247 ảnh) | fine-tune + đánh giá | 154 nốt + 93 ảnh bình thường; nốt xác nhận bằng CT. **Nhãn subtlety do BA bác sĩ gán** — 20 bác sĩ là nhóm tham gia nghiên cứu ROC để KIỂM CHỨNG thang này (tương quan r=0,999), không phải nhóm gán nhãn. Ghi cũ gộp hai việc làm một. Mỗi ảnh dương tính chỉ 1 nốt; đường kính 5–60mm, trung vị 15mm, 97% ≤30mm |
 | NIH ChestX-ray14 (112.120 ảnh) | pre-train backbone | nhãn khai thác tự động từ báo cáo nên **có nhiễu**; chỉ dùng học biểu diễn |
 | bone_shadow (241 cặp) | train U-Net khử xương | Kaggle `hmchuong/xray-bone-shadow-supression` |
 | VinDr-CXR | external validation (ĐANG LÀM) | xem mục 7 |
@@ -385,6 +385,24 @@ giải cao để phát hiện dấu hiệu tinh vi.
 Đây là chỗ chống lưng mạnh: phát hiện của ta về nhóm subtlety 1 **không phải bất
 thường** mà nhất quán với hạn chế đã biết của chính mô hình đó. Đã đưa vào phần
 Thảo luận.
+
+## 8c. Thêm hai điểm tra được (15/09/2026)
+
+**Con số r = 0,999 rất có lợi.** Trong chính nghiên cứu ROC của JSRT, điểm tin
+cậy trung bình của 20 bác sĩ tương quan với mức subtlety được gán ở r = 0,999.
+Nghĩa là thang subtlety **neo vào độ khó phát hiện đo được ở người thật**, chứ
+không phải phân nhóm tuỳ tiện. Đây là lập luận biện minh cho toàn bộ cách tiếp
+cận phân tầng — nên nêu sớm trong bài.
+
+**Kết quả ngoại mạnh nhất của Horry đạt được bằng cách LOẠI BỎ nhóm khó.**
+Nguyên văn: *"In external testing, E-D6 provided an excellent generalization
+result when very subtle and extremely subtle nodules were excluded from the
+JSRT training data"* — 76,7% ở 7,6 FP/ảnh. Và: *"Best results were obtained for
+category C, excluding subtle and extremely subtle nodules"*.
+
+Nêu điều này một cách công bằng (họ viết rõ trong bài, không giấu), nhưng nó
+làm luận điểm của ta thành cụ thể: **một con số hiệu năng luôn có điều kiện là
+nhóm khó nào được tính vào**, và hai nhóm khó nhất thường bị loại ra.
 
 ## 9. Cần biết khi viết bài
 

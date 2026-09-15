@@ -105,7 +105,13 @@ the subtle stratum.
 
 The JSRT dataset is unusual in permitting a direct test, because each nodule
 carries a subtlety rating from 1 (extremely subtle) to 5 (obvious) assigned by
-radiologist consensus. This paper uses that rating in two ways. We report
+three independent chest radiologists. That scale is not merely an expert
+impression: in the database's own observer study, the mean confidence score of
+20 radiologists reading the same cases correlates with the assigned subtlety
+degree at $r = 0.999$~\cite{shiraishi2000jsrt}. The stratification axis we use
+is therefore anchored to measured human detection difficulty, which is what
+makes a per-stratum result clinically interpretable rather than an arbitrary
+partition. This paper uses that rating in two ways. We report
 sensitivity per stratum rather than in aggregate, and, more importantly, we
 attach a confidence interval to every stratified figure.
 
@@ -168,6 +174,17 @@ levels that we observe here. That work proposes bone suppression as a plausible
 remedy but does not evaluate it. Our study should be read as a test of that
 proposal rather than as an independent idea.
 
+That paper also illustrates, transparently and in its own words, why the
+stratification matters for how results are read. Its strongest external
+generalisation figure --- 76.7\% sensitivity at 7.6 false positives per image
+--- was obtained ``when very subtle and extremely subtle nodules were excluded
+from the JSRT training data''~\cite{horry2023fullres}, and the authors record
+that their best configuration excluded those categories. We note this not as a
+criticism, since it is stated plainly in the source, but because it makes the
+point concrete: a headline detection figure is conditional on which difficulty
+strata are in scope, and the two hardest strata are the ones most often out of
+it.
+
 \paragraph{Bone suppression.}
 Suppressing rib and clavicle shadows is an established pre-processing step.
 Early learned approaches trained autoencoders and convolutional networks to
@@ -210,12 +227,16 @@ training data, and we make no such comparison.
 \subsection{Data}
 
 \paragraph{JSRT.}
-The JSRT dataset~\cite{shiraishi2000jsrt} contains 247 posteroanterior chest radiographs: 154 with a
-single pulmonary nodule confirmed by CT, and 93 without. Each nodule carries a
-subtlety rating from 1 to 5 assigned from the observer study of 20
-radiologists. The distribution is uneven --- 25, 29, 50, 38 and 12 nodules at
+The JSRT dataset~\cite{shiraishi2000jsrt} contains 247 posteroanterior chest
+radiographs collected from 14 medical centres: 154 with a single pulmonary
+nodule confirmed by CT, and 93 without. Films were digitised at
+$2048 \times 2048$ with 0.175\,mm pixels. Each nodule carries a subtlety rating
+from 1 to 5 assigned by three chest radiologists, reflecting nodule size,
+density and occlusion by overlying structures. The distribution is uneven --- 25, 29, 50, 38 and 12 nodules at
 levels 1 through 5 --- and the two extreme strata are small enough that we
-interpret differences there with corresponding caution. Images were resampled
+interpret differences there with corresponding caution. Every positive case
+carries exactly one nodule; diameters range from 5 to 60\,mm with a median of
+15\,mm. Images were resampled
 to $512 \times 512$ and contrast-limited adaptive histogram equalisation was
 applied (clip limit 2.0, $8 \times 8$ grid).
 
@@ -655,9 +676,10 @@ positive per image. Internal cross-validation on 247 images, however carefully
 its uncertainty is quantified, did not predict this.
 
 Three differences between the cohorts bound the interpretation, and none of them
-is small. VinDr's \texttt{Nodule/Mass} class merges nodules with masses, while
-JSRT contains solitary CT-confirmed nodules, so the detection targets are not
-the same object. The VinDr labels we used come from three independent readers
+is small. VinDr's \texttt{Nodule/Mass} class merges nodules with masses by
+definition, while JSRT is predominantly nodules --- median diameter 15\,mm, and
+97\% at or below 30\,mm, though 4 of its 154 lesions exceed that --- so the
+detection targets overlap but are not the same population. The VinDr labels we used come from three independent readers
 merged by IoU rather than the five-reader consensus of the official test split,
 which is available only through PhysioNet. And acquisition, population and
 post-processing all differ. We present this as evidence that the system does not
@@ -770,9 +792,14 @@ generalisation.
         a single seed, so it supports a qualitative conclusion about the
         augmentation penalty but not a precise effect size.
   \item \textbf{Performance below published work.} Our absolute CPM values are
-        lower than results reported by others on JSRT, including
-        Horry~et~al.~\cite{horry2023fullres}, who reach 85\% sensitivity at 8
-        false positives per image. We report
+        lower than results reported by others on JSRT.
+        Horry~et~al.~\cite{horry2023fullres} reach 85\% sensitivity at 8 false
+        positives per image internally and 76.7\% at 7.6 externally --- the
+        latter with the two hardest subtlety categories excluded from training,
+        and at a false-positive rate roughly twice the highest we report. We
+        retained every stratum and evaluate up to 4 FP/image, so the figures are
+        not comparable term for term; the gap in absolute performance is
+        nonetheless real. We report
         relative comparisons under a controlled protocol rather than competing
         on absolute performance.
   \item \textbf{Benchmark contamination.} JSRT forms part of the NODE21
