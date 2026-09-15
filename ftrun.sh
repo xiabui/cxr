@@ -13,6 +13,9 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate ai_env
 cd ~/workspace/cancer-detection/cxr_nodule
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+# Khong dem stdout. Neu khong, tien do fold nam trong bo dem va log rong
+# suot nhieu gio — khong biet chay toi dau, tuong nhu treo.
+export PYTHONUNBUFFERED=1
 ulimit -n 65535
 rm -f runs/FT_DONE
 
