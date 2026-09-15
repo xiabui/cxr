@@ -548,11 +548,13 @@ Subtlety level & $\Delta$ (points) & 95\% CI \\
 \begin{figure}[t]
 \centering
 \includegraphics{fig/fig_forest.pdf}
-\caption{Effect of bone suppression by subtlety level, averaged over five seeds
-with 95\% image-level bootstrap intervals. Intervals excluding zero are drawn in
-colour. The aggregate CPM gain is real, but the only stratum that individually
-clears zero is level 4 --- the second-easiest. The point estimate for the most
-subtle level is negative.}
+\caption{Effect of bone suppression by subtlety level under ten-fold
+cross-validation, averaged over five seeds, with 95\% image-level bootstrap
+intervals; intervals excluding zero are drawn in colour. The aggregate gain is
+real and replicates under leave-one-out, but this per-stratum pattern does not:
+under leave-one-out the gain moves to level 2 and level 5 turns negative
+(Table~\ref{tab:unstable}). Read the aggregate row as the finding and the
+per-stratum rows as provisional.}
 \label{fig:forest}
 \end{figure}
 
