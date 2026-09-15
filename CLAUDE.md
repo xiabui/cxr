@@ -76,6 +76,44 @@ ResNet34: baseline 29,3% | +U-Net 29,7% | +U-Net+CBAM 37,6% | +U-Net+weighted lo
 
 RAD-DINO (frozen): 3 kênh lặp 36,5% | +U-Net **44,4%** | +U-Net+augmentation **23,9%**
 
+### CẬP NHẬT 15/09/2026 (2) — KIỂM ĐỊNH NGOẠI VinDr ĐÃ XONG
+
+Dữ liệu lấy từ Kaggle `vinbigdata-chest-xray-abnormalities-detection` (phải tự
+bấm chấp nhận điều khoản). **Không cần tải 190GB DICOM**: bộ `xhlulu/vinbigdata`
+có sẵn PNG 512×512 chỉ 2GB, cộng `train_meta.csv` chứa kích thước gốc.
+
+1.426 ảnh (826 có nốt + 600 thường), 2.580 hộp gộp IoU còn **1.795 nốt**.
+
+| Nới biên hộp | Dung sai | CPM |
+|---|---|---|
+| 0 px | ~7,6 px | 13,7% |
+| 14 px | ~21,6 px | 15,7% |
+| 21 px | ~28,6 px | **16,5% [14,7; 18,3]** |
+
+**Kết luận: tiêu chí đo chỉ giải thích ~2,8 điểm.** Nội bộ 43,3% → ngoại 16,5%
+ngay cả khi dung sai RỘNG HƠN nội bộ. Khoảng 26 điểm còn lại là **tổng quát hóa
+kém thật**, không phải lỗi cách đo.
+
+**BA LỖI THẦM LẶNG đã bắt được, đừng lặp lại:**
+
+1. **Quy ước sáng/tối ĐẢO NGƯỢC.** JSRT sau tiền xử lý là phổi SÁNG; PNG VinDr
+   là phổi TỐI. 1.417/1.426 ảnh phải đảo. `read_dicom` có xử lý MONOCHROME1
+   nhưng đường PNG không chạy qua đó. Nay `lung_is_bright()` phát hiện theo
+   TỪNG ẢNH (nguồn trộn cả hai quy ước).
+2. **Kênh khử xương làm sai cách.** JSRT dùng `suppress_image_masked` — CÓ MẶT
+   NẠ PHỔI, ngoài phổi giữ nguyên. `external_vindr.py` từng tự viết lại thành
+   trộn phẳng, lại chạy U-Net ở 256px trong khi checkpoint ghi 512px. Nay gọi
+   thẳng `load_bs_model` + `suppress_image_masked` của `src`.
+3. **Toạ độ hộp sai tỉ lệ.** Ảnh PNG đã resize sẵn nên `img.shape` KHÔNG phải
+   kích thước gốc. Thêm `--meta-csv` và kiểm tra hộp tràn khung.
+
+Cả ba đều KHÔNG ném lỗi — chỉ làm số thấp đi rồi bị đọc nhầm thành "tổng quát
+hóa kém". Luôn kiểm quy ước ảnh và đường sinh kênh trước khi tin số ngoại.
+
+**Hạn chế phải nêu:** nhãn 3 bác sĩ gộp IoU (không phải đồng thuận 5 bác sĩ của
+tập test, chỉ có trên PhysioNet); `Nodule/Mass` gộp cả khối u nên đích khác
+JSRT; 9 ảnh (0,6%, 3 nốt) có quy ước mơ hồ.
+
 ### CẬP NHẬT 15/09/2026 — tinh chỉnh một phần XONG, giả thuyết của phát hiện 2 ĐƯỢC XÁC NHẬN
 
 Mở băng 4 tầng cuối RAD-DINO (28,4/86,6 triệu tham số), hai nhánh chỉ khác

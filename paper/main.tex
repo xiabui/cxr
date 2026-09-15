@@ -82,6 +82,11 @@ contribution is to quantify the uncertainty that stratified evaluation on a
 247-image dataset actually carries, and to show that this uncertainty is large
 enough to absorb most published effect sizes on this benchmark.
 
+Applied unchanged to 1{,}426 VinDr-CXR images with 1{,}795 nodules, the same
+detector reaches a CPM of 16.5\% $[14.7, 18.3]$ under a match tolerance more
+generous than the internal one --- against 43.3\% internally. Careful internal
+uncertainty quantification did not anticipate that gap.
+
 \medskip
 \noindent\textbf{Keywords:} chest radiography, nodule detection, subtlety
 stratification, FROC analysis, bootstrap confidence intervals, reproducibility
@@ -600,6 +605,64 @@ Fine-tuning did not improve aggregate performance: 42.2\% $[35.3, 49.3]$ against
 43.3\% for the frozen backbone with bone suppression. Its value here is
 explanatory rather than practical.
 
+\subsection{External Validation on VinDr-CXR}
+\label{sec:external}
+
+We applied the JSRT-trained detector, unchanged, to 1{,}426 VinDr-CXR
+images~\cite{nguyen2022vindr} containing 1{,}795 annotated nodules --- eleven
+times more nodules than JSRT provides, so the intervals here are narrow. The
+decoder was trained on all of JSRT and never saw VinDr.
+
+A hit on VinDr requires the predicted peak to fall inside an annotated box.
+This is not the criterion used on JSRT, where a hit is a peak within 15\,mm of
+the nodule centre, and the two are not interchangeable: 15\,mm corresponds to
+21.4 px at our resolution, whereas the median VinDr box admits a tolerance of
+only 7.6 px. The external criterion is roughly $2.8\times$ stricter, and a naive
+comparison would charge that difference to the model.
+
+We therefore swept a margin that dilates each box before matching
+(Table~\ref{tab:margin}), which separates the two effects.
+
+\begin{table}[t]
+\centering
+\caption{External validation on VinDr-CXR under increasing match tolerance. A
+margin of 21 px makes the effective tolerance more generous than the 21.4 px
+used on JSRT, so the last row removes the criterion difference entirely.}
+\label{tab:margin}
+\begin{tabular}{lccc}
+\toprule
+Box margin & Effective tolerance & CPM (\%) & Sens @ 1.0 FP (\%) \\
+\midrule
+0 px (strict) & $\approx$ 7.6 px  & 13.7 & 15.2 \\
+7 px          & $\approx$ 14.6 px & 14.8 & 16.5 \\
+14 px         & $\approx$ 21.6 px & 15.7 & 17.4 \\
+21 px         & $\approx$ 28.6 px & 16.5 $[14.7, 18.3]$ & 18.1 $[16.0, 20.4]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Relaxing the criterion from stricter-than-JSRT to more-generous-than-JSRT moves
+CPM by 2.8 points, from 13.7\% to 16.5\%. The internal figure for the same
+configuration is 43.3\%. The measurement difference therefore explains roughly a
+tenth of the gap; the remaining $\approx26$ points are a genuine failure to
+transfer.
+
+We report this plainly because it bears on the paper's argument. A system whose
+internal stratified analysis we have just spent several sections refining
+detects fewer than one nodule in five on an external cohort at one false
+positive per image. Internal cross-validation on 247 images, however carefully
+its uncertainty is quantified, did not predict this.
+
+Three differences between the cohorts bound the interpretation, and none of them
+is small. VinDr's \texttt{Nodule/Mass} class merges nodules with masses, while
+JSRT contains solitary CT-confirmed nodules, so the detection targets are not
+the same object. The VinDr labels we used come from three independent readers
+merged by IoU rather than the five-reader consensus of the official test split,
+which is available only through PhysioNet. And acquisition, population and
+post-processing all differ. We present this as evidence that the system does not
+transfer, not as a calibrated estimate of how well it would transfer to a cohort
+matched to JSRT.
+
 \subsection{The Most Subtle Stratum Resists Every Configuration}
 \label{sec:floor}
 
@@ -616,7 +679,7 @@ costs 22 CPM points overall and 42 points on the most obvious nodules, yet
 leaves level 1 unchanged. The stratum behaves as a floor that our methods
 neither raise nor lower.
 
-\pending{external validation on VinDr-CXR, see Discussion}
+See Section~\ref{sec:external}.
 
 % =====================================================================
 \section{Discussion}
@@ -667,7 +730,9 @@ agreement of two independent studies as more informative than either alone, and
 we claim no priority.
 
 \paragraph{External validation.}
-\pending{VinDr-CXR results}. We note in advance that the hit criterion on
+Section~\ref{sec:external} reports the external result: CPM falls from 43.3\%
+internally to 16.5\% $[14.7, 18.3]$ on VinDr-CXR even under a match tolerance
+more generous than the internal one. We note that the hit criterion on
 VinDr-CXR~\cite{nguyen2022vindr} differs from that used on JSRT: VinDr annotations are bounding boxes
 and DICOM pixel spacing varies across images, so a millimetre-based radius is
 unreliable and we instead require the predicted peak to fall inside the
@@ -699,6 +764,11 @@ generalisation.
   \item \textbf{Benchmark contamination.} JSRT forms part of the NODE21
         training data, so comparison against NODE21-trained models is not
         meaningful.
+  \item \textbf{External cohort caveats.} VinDr images reached us as
+        pre-rendered PNGs whose photometric convention is mixed; we detect and
+        normalise it per image, but 9 of 1{,}426 images (0.6\%, carrying 3 of
+        1{,}795 nodules) sit close to the decision boundary and may be
+        normalised the wrong way.
   \item \textbf{Exploratory stratified statistics.} The stratified comparisons
         involve multiple strata and operating points without multiplicity
         correction.

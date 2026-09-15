@@ -187,19 +187,19 @@ def main(a):
     print("         mang tính tham khảo về khả năng tổng quát hóa.")
 
     os.makedirs("runs", exist_ok=True)
-    json.dump({"dataset": "vindr-cxr", "backbone": a.backbone,
+    tg = a.tag or f"vindr_{a.backbone}_m{a.margin:g}"
+    json.dump({"dataset": "vindr-cxr", "backbone": a.backbone, "margin": a.margin,
                "bone_suppression": bs_model is not None,
                "n_images": n_img, "n_nodules": n_nod, "cpm": cpm,
                "sens_at": {str(k): v for k, v in sens.items()}},
-              open("runs/results_vindr.json", "w"), indent=2)
-    print("\nĐã lưu runs/results_vindr.json")
+              open(f"runs/results_{tg}.json", "w"), indent=2)
+    print(f"\nĐã lưu runs/results_{tg}.json")
 
-    json.dump({"tag": f"vindr_{a.backbone}", "backbone": a.backbone,
+    json.dump({"tag": tg, "backbone": a.backbone, "margin": a.margin,
                "protocol": "external", "dataset": "vindr-cxr",
                "fp_rates": list(rates), "n_images": n_img, "n_nodules": n_nod,
-               "images": recs}, open("runs/scores_vindr.json", "w"))
-    print("Đã lưu runs/scores_vindr.json  (chạy: python bootstrap_ci.py "
-          "runs/scores_vindr.json)")
+               "images": recs}, open(f"runs/scores_{tg}.json", "w"))
+    print(f"Đã lưu runs/scores_{tg}.json")
 
 
 if __name__ == "__main__":
@@ -211,6 +211,7 @@ if __name__ == "__main__":
     p.add_argument("--bs-ckpt", default="checkpoints/bone_suppression_unet.pt")
     p.add_argument("--blend", type=float, default=0.7)
     p.add_argument("--peak-dist", type=int, default=10)
+    p.add_argument("--tag", default=None, help="hậu tố tên file kết quả")
     p.add_argument("--margin", type=float, default=0.0,
                    help="nới biên hộp khi đối sánh, đơn vị điểm ảnh")
     main(p.parse_args())
