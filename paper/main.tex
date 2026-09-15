@@ -94,9 +94,12 @@ A pulmonary nodule that is plainly visible on a chest radiograph is not the
 case that needs a second reader. The cases that matter are the ones a
 radiologist may miss: small, low-contrast lesions, or lesions overlapped by
 ribs and clavicles. Retrospective reviews of missed lung cancer on chest
-radiographs consistently find that the lesion was visible in hindsight
-\todo{cite}, which is precisely the population a detection system should
-target.
+radiographs consistently find that the lesion was visible in hindsight ---
+Quekel~et~al.~\cite{quekel1999missrate} report that 19\% of lung cancers were
+missed on a radiograph where the lesion could be seen retrospectively, with
+superimposed bone and vascular structures the dominant cause. That is precisely
+the population a detection system should target, and precisely the population
+bone suppression is meant to help.
 
 Reported performance rarely reflects this. The standard summary is the
 competition performance metric (CPM), the mean sensitivity across a fixed set
@@ -155,7 +158,13 @@ analysis showed were never the problem.
 \section{Related Work}
 
 \paragraph{Nodule detection on chest radiographs.}
-\todo{2--3 sentences on CXR nodule detection approaches, with citations}
+Automated nodule detection on chest radiographs is now dominated by deep
+detectors and segmentation networks, benchmarked most visibly by the NODE21
+challenge~\cite{sogancioglu2024node21}. Reported performance is almost always a
+single aggregate figure --- a sensitivity at a chosen false-positive rate, or a
+CPM --- computed over all nodules at once. Where a per-difficulty breakdown does
+appear, as in Horry~et~al.~\cite{horry2023fullres}, it shows the aggregate
+figure concealing near-total failure on the hardest cases.
 
 \paragraph{Subtlety-stratified evaluation.}
 Stratifying JSRT results by the subtlety rating is not new.
@@ -212,12 +221,14 @@ applied (clip limit 2.0, $8 \times 8$ grid).
 112{,}120 images from ChestX-ray14~\cite{wang2017chestxray} were used to
 pre-train the ResNet-34 backbone. Labels in this
 dataset are mined automatically from radiology reports and are known to be
-noisy \todo{cite}; we use it only for representation learning and never for
-evaluation.
+noisy~\cite{oakdenrayner2020exploring}; we use it only for representation
+learning and never for evaluation.
 
 \paragraph{Bone-shadow pairs.}
-241 paired radiographs with and without bone shadow \todo{cite source of the bone-shadow pairs}
-were used to train the suppression network described below.
+241 paired radiographs with and without bone shadow, derived from
+dual-energy subtraction in the manner of
+Gusarev~et~al.~\cite{gusarev2017bonesup}, were used to train the suppression
+network described below.
 
 \subsection{Detection Framework}
 

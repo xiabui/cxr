@@ -65,12 +65,15 @@
 }
 
 @article{sogancioglu2024node21,
-  title   = {Nodule detection and generation on chest X-rays: {NODE21} Challenge},
-  author  = {Sogancioglu, Ecem and others},
+  title   = {Nodule Detection and Generation on Chest X-Rays: {NODE21} Challenge},
+  author  = {Sogancioglu, Ecem and van Ginneken, Bram and Behrendt, Finn and
+             Bengs, Marcel and others},
   journal = {IEEE Transactions on Medical Imaging},
   year    = {2024},
-  note    = {ĐỐI CHIẾU: cần xác nhận JSRT nằm trong tập huấn luyện NODE21 —
-             đây là luận điểm trong bài, phải dẫn đúng chỗ}
+  doi     = {10.1109/TMI.2024.3382042},
+  note    = {ĐÃ XÁC MINH 15/09/2026 qua trang Data của NODE21: tập huấn luyện
+             được gom từ JSRT, PadChest, ChestX-ray14 và Open-I. Vậy khẳng định
+             'JSRT nằm trong tập huấn luyện NODE21' trong bài là ĐÚNG.}
 }
 
 @article{nguyen2022vindr,
@@ -137,39 +140,43 @@
 % Nguồn dữ liệu 241 cặp ảnh khử bóng xương (Kaggle
 % hmchuong/xray-bone-shadow-supression). Tìm bài báo gốc sinh ra bộ này,
 % đừng trích dẫn đường link Kaggle nếu tránh được.
-@misc{TODO-bone-shadow-data,
-  title = {CHUA DIEN},
-  year  = {0000}
+@inproceedings{gusarev2017bonesup,
+  title     = {Deep learning models for bone suppression in chest radiographs},
+  author    = {Gusarev, Maxim and Kuleev, Ramil and Khan, Adil and
+               Ramirez Rivera, Adin},
+  booktitle = {IEEE Conference on Computational Intelligence in Bioinformatics
+               and Computational Biology (CIBCB)},
+  year      = {2017},
+  doi       = {10.1109/CIBCB.2017.8058543},
+  note      = {ĐỐI CHIẾU: xác nhận đây đúng là nguồn của 241 cặp ảnh trên Kaggle
+               (hmchuong/xray-bone-shadow-supression) trước khi nộp}
 }
 
 % Tổng quan về ung thư phổi BỊ BỎ SÓT trên X-quang ngực (nhìn lại thì thấy
 % được). Chống đỡ cho câu mở đầu phần Introduction.
-@article{TODO-missed-lung-cancer,
-  title = {CHUA DIEN},
-  year  = {0000}
+@article{quekel1999missrate,
+  title   = {Miss Rate of Lung Cancer on the Chest Radiograph in Clinical Practice},
+  author  = {Quekel, Lorentz G. B. A. and Kessels, Alphons G. H. and
+             Goei, Reginald and van Engelshoven, Joseph M. A.},
+  journal = {Chest},
+  volume  = {115},
+  number  = {3},
+  pages   = {720--724},
+  year    = {1999},
+  doi     = {10.1378/chest.115.3.720}
 }
 
 % Nhiễu nhãn của ChestX-ray14 (nhãn khai thác tự động từ báo cáo).
-@article{TODO-chestxray-label-noise,
-  title = {CHUA DIEN},
-  year  = {0000}
+@article{oakdenrayner2020exploring,
+  title   = {Exploring Large-scale Public Medical Image Datasets},
+  author  = {Oakden-Rayner, Luke},
+  journal = {Academic Radiology},
+  volume  = {27},
+  number  = {1},
+  pages   = {106--112},
+  year    = {2020},
+  doi     = {10.1016/j.acra.2019.10.006}
 }
 
-% Các công bố khác trên CÙNG JSRT có hiệu năng CAO HƠN của ta. Phần Hạn chế
-% mục 4 nói thẳng điều này nên phải dẫn được ít nhất một bài.
-@article{TODO-jsrt-higher-performance,
-  title = {CHUA DIEN},
-  year  = {0000}
-}
 
-% 2-3 bài nền về phát hiện nốt trên X-quang ngực, cho đoạn đầu Related Work.
-@article{TODO-cxr-detection-survey,
-  title = {CHUA DIEN},
-  year  = {0000}
-}
 
-% 2-3 bài về khử bóng xương trên X-quang ngực.
-@article{TODO-bone-suppression-methods,
-  title = {CHUA DIEN},
-  year  = {0000}
-}

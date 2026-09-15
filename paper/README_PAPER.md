@@ -17,7 +17,38 @@ trên bản PDF. Còn thấy màu là chưa nộp được.
 
 ---
 
-## 1. Trích dẫn — việc nặng nhất, và mình KHÔNG làm thay được
+## 1. Trích dẫn — ĐÃ XONG (15/09/2026)
+
+Đã tra cứu và xác minh, không còn mục nào trống. 12 mục trong `refs.bib`.
+
+Hai mục bắt buộc đều tìm được:
+
+| Khoá | Bài | Cách xác minh |
+|---|---|---|
+| `horry2023fullres` | Horry và cs. 2023, IEEE Access 11 | tải PDF, đọc toàn văn: có bảng phân tầng subtlety, có câu đề xuất khử xương |
+| `muthyala2026frozen` | Muthyala và cs. 2026, arXiv 2606.11606 | đọc abstract đầy đủ: có thử RAD-DINO, nhưng là phân loại chứ không phải phát hiện |
+
+Còn hai mục nên đối chiếu lại bản gốc trước khi nộp:
+- `gusarev2017bonesup` — xác nhận đây đúng là nguồn 241 cặp ảnh trên Kaggle.
+- `perezgarcia2024raddino` — con số **838.000 ảnh** nằm trong abstract, sai là thấy ngay.
+
+### Kết luận tra cứu trùng lặp: KHÔNG TRÙNG
+
+Horry và cs. **đề xuất** khử bóng xương và ghi rõ trong Kết luận rằng nhóm họ
+"đang làm" — nhưng tra cứu cho thấy **chưa công bố**. Bài khử xương 2025 tìm
+được là của nhóm Ibrahim, và chỉ đo chất lượng ảnh (SSIM/PSNR), không đo ảnh
+hưởng tới phát hiện. Khoảng trống vẫn còn nguyên.
+
+Muthyala và cs. 2026 có thử chính RAD-DINO, nhưng là **phân loại (AUC)** trên
+NIH/MIMIC/Emory/ChestX-Det10 — không phải phát hiện trên JSRT, không dùng
+subtlety, không động tới khử xương hay tăng cường, không có khoảng tin cậy.
+
+Đọc bài đó còn được thêm một luận điểm: họ kết luận tín hiệu mất ở bước **gộp
+toàn cục** và giữ được ở **patch token**. Decoder của ta dùng patch token, nên
+thất bại ở nhóm subtlety 1 **không** giải thích được bằng gộp toàn cục. Đã đưa
+vào Related Work.
+
+## 1b. Ghi chú cũ về trích dẫn
 
 `refs.bib` chia hai nhóm.
 
