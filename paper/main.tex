@@ -32,7 +32,12 @@
 Radiographs: Aggregate Gains Land on the Easiest Cases While the Hardest
 Stratum Remains Unsolved}}
 
-\author{\todo{authors, affiliations, e-mail}}
+% TÊN TÁC GIẢ VIẾT BẰNG MACRO, ĐỪNG THAY BẰNG CHỮ VIỆT TRỰC TIẾP.
+% pdflatex + inputenc KHÔNG đọc được ầ (U+1EA7) và ị (U+1ECB): nó không báo
+% lỗi dừng mà lặng lẽ BỎ MẤT chữ — "Trần Thị" in ra thành "Trn Th".
+% Viết sai tên người là lỗi không được phép. Nếu sau này đổi sang XeLaTeX
+% hoặc LuaLaTeX thì mới thay bằng chữ Việt trực tiếp được.
+\author{B\`ui V\u{a}n X\'ia \and Tr\`{\^a}n Th\d{\i} Qu\`ynh Nga}
 \date{}
 
 \begin{document}
@@ -813,8 +818,7 @@ Code is available at \url{https://github.com/xiabui/cxr}. Bootstrap and multi-se
 Per-image raw detection scores are written for every run, so all intervals in
 this paper can be recomputed without retraining.
 
-\section*{Acknowledgements}
-\todo{if any}
+
 
 \bibliographystyle{plain}
 \bibliography{refs}
