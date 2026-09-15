@@ -123,31 +123,18 @@ def evaluate(cfg, model, test_files, device):
             results, unmatched = match_detections(
                 peaks, meta["nodules"], stride, meta["mm_per_px"], e["hit_radius_mm"])
             all_results += results
-            matched_per_image.append((results, unmatched))
+            matched_per_image.append((results, unmatched, meta["filename"]))
             n_nodules += meta["n_nodules"]
     return all_results, matched_per_image, n_nodules
 
 
-def main(config):
+def main(config, seed=None, tag=None):
     with open(config) as f:
         cfg = yaml.safe_load(f)
+    if seed is not None:
+        cfg["seed"] = int(seed)
     set_seed(cfg["seed"])
-    try:
-        import torch
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    except ImportError:
-        raise SystemExit("Cần cài torch: pip install -r requirements.txt")
-
-    files = list_images(cfg)
-    if not files:
-        raise SystemExit("Chưa có ảnh đã xử lý. Chạy: python -m src.preprocess trước.")
-    folds = make_folds(cfg, files)
-    print(f"Giao thức: {cfg['train']['protocol']} | {len(folds)} fold | device={device}")
-
-def main(config):
-    with open(config) as f:
-        cfg = yaml.safe_load(f)
-    set_seed(cfg["seed"])
+    print(f"Seed: {cfg['seed']}")
     try:
         import torch
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -162,8 +149,13 @@ def main(config):
     print(f"Giao thức: {proto} | {len(folds)} fold | device={device}")
 
     # thư mục lưu tiến độ từng fold (để resume). Đặt trên Drive nếu cấu hình.
-    prog_dir = cfg.get("resume_dir", "runs/folds")
+    # BẪY: thư mục này lưu fold_XXXX.pkl và BỎ QUA fold đã tồn tại để resume
+    # được. Nếu không tách theo seed thì chạy seed 2 sẽ dùng lại nguyên kết quả
+    # của seed 1, và "nhiều seed" trở thành cùng một lần chạy lặp lại.
+    tg = tag or f"seed{cfg['seed']}"
+    prog_dir = os.path.join(cfg.get("resume_dir", "runs/folds"), tg)
     os.makedirs(prog_dir, exist_ok=True)
+    print(f"Thư mục fold: {prog_dir}")
 
     import pickle
     for k, (tr, te) in enumerate(folds):
@@ -197,6 +189,21 @@ def main(config):
         agg_results += d["results"]; agg_matched += d["matched"]
         agg_nod += d["nod"]; n_images += d["n_test"]
 
+    # điểm thô gom THEO ẢNH — đầu vào bắt buộc của bootstrap_ci.py
+    recs = []
+    for item in agg_matched:
+        if len(item) == 3:
+            results, unmatched, fname = item
+        else:                     # fold cũ lưu trước khi thêm tên file
+            results, unmatched = item
+            fname = f"img{len(recs):04d}"
+        recs.append({
+            "image": os.path.splitext(os.path.basename(str(fname)))[0],
+            "nodules": [{"score": float(nd.get("hit_score") or 0.0),
+                         "subtlety": int(nd["subtlety"])} for nd in unmatched],
+            "fps": [float(sc) for sc, is_tp in results if not is_tp],
+        })
+
     fppi, sens, sens_at, cpm = compute_froc(
         agg_results, n_images, agg_nod, cfg["eval"]["fp_rates"])
     print("\n" + "=" * 52)
@@ -213,10 +220,20 @@ def main(config):
         print(format_subtlety_table(by_sub))
 
     os.makedirs("runs", exist_ok=True)
-    with open("runs/results.json", "w") as f:
+    with open(f"runs/results_{tg}.json", "w") as f:
         json.dump({"sens_at": sens_at, "cpm": cpm, "n_nodules": agg_nod,
-                   "n_images": n_images, "protocol": proto}, f, indent=2)
-    print("\nĐã lưu runs/results.json")
+                   "n_images": n_images, "protocol": proto,
+                   "seed": cfg["seed"], "tag": tg,
+                   "in_channels": cfg["model"].get("in_channels", 1),
+                   "use_attention": cfg["model"].get("use_attention", False)},
+                  f, indent=2)
+    with open(f"runs/scores_{tg}.json", "w") as f:
+        json.dump({"tag": tg, "backbone": cfg["model"].get("backbone"),
+                   "protocol": proto, "seed": cfg["seed"],
+                   "fp_rates": list(cfg["eval"]["fp_rates"]),
+                   "n_images": n_images, "n_nodules": agg_nod,
+                   "images": recs}, f)
+    print(f"\nĐã lưu runs/results_{tg}.json và runs/scores_{tg}.json")
 
 
 def train_full(cfg, device=None, save_path=None):
@@ -249,4 +266,7 @@ def load_full_model(cfg, ckpt_path, device):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/baseline.yaml")
-    main(ap.parse_args().config)
+    ap.add_argument("--seed", type=int, default=None)
+    ap.add_argument("--tag", default=None)
+    a = ap.parse_args()
+    main(a.config, a.seed, a.tag)

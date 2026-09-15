@@ -109,6 +109,18 @@ không đủ vững để chống đỡ một lập luận cơ chế, dù hiệu
 Thứ sống sót qua cả hai: khử xương cộng vài điểm CPM, và **nhóm 1 không nhúc
 nhích ở cả hai**.
 
+### ĐÍNH CHÍNH: src/train.py CÓ gieo hạt
+
+Tôi từng khẳng định `src/train.py` không gieo hạt vì grep `manual_seed` ra 0.
+SAI. Nó gọi `set_seed(cfg["seed"])` ở dòng 150, và `set_seed` trong `src/utils.py`
+gieo đủ `random`, `numpy`, `torch`, `torch.cuda`.
+
+Vấn đề thật với hai dòng ResNet trong Bảng 1 không phải "không gieo hạt" mà là
+**một seed duy nhất và không lưu điểm thô**, nên không tính được khoảng tin cậy
+về sau. Đã sửa cách diễn đạt trong bài.
+
+Bài học: grep tên hàm chuẩn không đủ, dự án có thể bọc trong hàm riêng.
+
 ### BÀI HỌC VẬN HÀNH: đừng sửa script shell đang chạy
 
 Sửa `loocvrun.sh` lúc 06:39 trong khi nó đang chạy. Bash đọc script theo vị trí

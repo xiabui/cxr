@@ -157,9 +157,9 @@ Our contributions:
 
 Every configuration we draw a conclusion from was run with a fixed seed and
 its per-image scores retained, so all intervals in this paper can be recomputed
-from the released scores without retraining. Two rows of Table~\ref{tab:loocv}
-come from earlier runs that were neither seeded nor score-retaining; they are
-labelled as such, and no claim rests on them.
+from the released scores without retraining. Two rows of Table~\ref{tab:loocv} come from earlier runs that used a single
+seed and did not retain per-image scores; they are labelled as such, and no claim
+rests on them.
 
 We make no claim of priority. Horry~et~al.~\cite{horry2023fullres} analysed
 JSRT by subtlety with a full-resolution encoder--decoder, observed the same
@@ -382,8 +382,8 @@ increases across the three configurations.
 \centering
 \caption{Leave-one-out cross-validation on JSRT. The two RAD-DINO rows are
 seeded runs with per-image scores retained, so intervals are computable; the
-ResNet-34 rows are earlier single runs with no fixed seed and no retained
-scores, and establish nothing on their own.}
+ResNet-34 rows come from earlier single-seed runs whose per-image scores were not
+kept, so no interval can be computed for them retrospectively.}
 \label{tab:loocv}
 \begin{tabular}{llc}
 \toprule
@@ -393,7 +393,7 @@ Configuration & Architecture & CPM (\%) [95\% CI] \\
 3-channel        & RAD-DINO (frozen)          & 40.3 $[34.0, 48.0]$ \\
 + bone suppression & RAD-DINO (frozen) + U-Net & 44.6 $[37.7, 51.3]$ \\
 \midrule
-\multicolumn{3}{l}{\emph{Earlier single unseeded runs, no interval:}} \\
+\multicolumn{3}{l}{\emph{Earlier single-seed runs, scores not retained:}} \\
 Baseline                       & ResNet-34                & 29.5 \\
 + bone suppression + attention & ResNet-34 + U-Net + CBAM & 34.2 \\
 \bottomrule
@@ -428,8 +428,8 @@ conceals this trade entirely.
 \begin{table}[t]
 \centering
 \caption{Sensitivity by subtlety level at 1.0 false positive per image,
-from the same earlier single unseeded runs as Table~\ref{tab:loocv} and subject
-to the same caveat. Level 1 is the most subtle. Note the small denominators: at
+from the same earlier single-seed runs as Table~\ref{tab:loocv}, for which no
+interval is available. Level 1 is the most subtle. Note the small denominators: at
 $n=12$ one nodule is 8.3 percentage points.}
 \label{tab:strat}
 \begin{tabular}{lcccc}
@@ -797,8 +797,8 @@ together. Aggregate CPM rises monotonically across the three configurations, and
 on that evidence one would recommend the third. The stratified table shows the
 second configuration trading easy-nodule sensitivity for hard-nodule sensitivity
 --- a trade that may well be desirable clinically, and one that aggregate
-reporting renders invisible in either direction. Those two tables are single
-unseeded runs and we draw no inference from them; the same phenomenon appears in
+reporting renders invisible in either direction. Those two tables include single-seed runs without intervals, from which we
+draw no inference; the same phenomenon appears in
 the seeded experiments below, where it can be quantified.
 
 \paragraph{What confidence intervals take away.}
