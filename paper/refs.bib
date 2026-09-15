@@ -59,9 +59,12 @@
   author  = {P{\'e}rez-Garc{\'i}a, Fernando and others},
   journal = {arXiv preprint},
   year    = {2024},
-  note    = {ĐỐI CHIẾU GẤP: danh sách tác giả đầy đủ, mã arXiv, và con số
-             838.000 ảnh dùng trong bài — con số này XUẤT HIỆN TRONG ABSTRACT
-             nên phải đúng}
+  note    = {QUAN TRỌNG: bài đề xuất RAD-DINO với 838k ảnh, TRONG ĐÓ có 90k ảnh
+             RIÊNG TƯ từ USMix. Checkpoint công khai microsoft/rad-dino là bản
+             huấn luyện LẠI chỉ trên dữ liệu công khai (~748k theo Bảng D.1).
+             Viết 'dùng mô hình học từ 838k ảnh' là SAI với checkpoint ta dùng.
+             Phụ lục C.1 của bài ghi nhận hiệu năng giảm ở độ phân giải thấp với
+             tổn thương khó thấy — trích được để chống lưng cho phát hiện nhóm 1.}
 }
 
 @article{sogancioglu2024node21,
@@ -137,9 +140,8 @@
   doi     = {10.1007/s10278-025-01461-2}
 }
 
-% Nguồn dữ liệu 241 cặp ảnh khử bóng xương (Kaggle
-% hmchuong/xray-bone-shadow-supression). Tìm bài báo gốc sinh ra bộ này,
-% đừng trích dẫn đường link Kaggle nếu tránh được.
+% Bài PHƯƠNG PHÁP khử xương (autoencoder/CNN). KHÔNG phải nguồn dữ liệu —
+% họ dùng dữ liệu chứ không tạo ra nó. Chỉ trích như một phương pháp trước đó.
 @inproceedings{gusarev2017bonesup,
   title     = {Deep learning models for bone suppression in chest radiographs},
   author    = {Gusarev, Maxim and Kuleev, Ramil and Khan, Adil and
@@ -147,9 +149,21 @@
   booktitle = {IEEE Conference on Computational Intelligence in Bioinformatics
                and Computational Biology (CIBCB)},
   year      = {2017},
-  doi       = {10.1109/CIBCB.2017.8058543},
-  note      = {ĐỐI CHIẾU: xác nhận đây đúng là nguồn của 241 cặp ảnh trên Kaggle
-               (hmchuong/xray-bone-shadow-supression) trước khi nộp}
+  doi       = {10.1109/CIBCB.2017.8058543}
+}
+
+% NGUỒN THẬT của ảnh ĐÃ KHỬ XƯƠNG (BSE-JSRT). Nhóm Budapest tạo ra bản khử
+% xương từ ảnh JSRT gốc của Shiraishi. Kaggle hmchuong/xray-bone-shadow-supression
+% chỉ là nơi PHÂN PHỐI LẠI, không phải nguồn.
+@inproceedings{juhasz2010bse,
+  title     = {Segmentation of anatomical structures on chest radiographs},
+  author    = {Juh{\'a}sz, S. and Horv{\'a}th, {\'A}. and Nikh{\'a}zy, L. and
+               Horv{\'a}th, G. and Horv{\'a}th, {\'A}.},
+  booktitle = {XII Mediterranean Conference on Medical and Biological
+               Engineering and Computing (MEDICON)},
+  pages     = {359--362},
+  year      = {2010},
+  publisher = {Springer}
 }
 
 % Tổng quan về ung thư phổi BỊ BỎ SÓT trên X-quang ngực (nhìn lại thì thấy

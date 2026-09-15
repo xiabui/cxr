@@ -210,7 +210,8 @@ Bản thảo trong `paper/` đã được định khung lại theo bằng chứn
 2. **Augmentation phản tác dụng khi backbone frozen.** Trừ 20,5 điểm. Vì backbone
    không thích nghi được, ảnh biến đổi lệch khỏi phân bố pre-training.
 3. **Nhóm subtlety 1 kháng lại mọi cấu hình**, dao động 0-8% kể cả với mô hình
-   học từ 882.775 ảnh. Quy mô pre-training không tự giải quyết được nốt khó nhất.
+   nền quy mô lớn. Quy mô pre-training không tự giải quyết được nốt khó nhất.
+   (Con số 882.775 từng dùng là SAI — xem mục 9.)
 
 Lưu ý: chênh lệch nhóm 1 giữa 8,0% và 4,0% chỉ là **một nốt trên 25**, nằm trong
 dao động ngẫu nhiên. Không được diễn giải là cấu hình nào tốt hơn.
@@ -343,6 +344,47 @@ Xếp theo tỷ lệ lợi ích trên công sức:
   cho khoảng hẹp giả tạo. Đây là biến thể của lỗi ngưỡng ở mục 5.
 - So sánh hai cấu hình phải **bắt cặp** (cùng chỉ số ảnh cho cả hai), nếu không
   khoảng tin cậy rộng một cách vô ích vì không triệt tiêu biến thiên chung.
+
+## 8b. BA ĐÍNH CHÍNH QUAN TRỌNG (15/09/2026) — sửa cả trong quyển và slide
+
+### 1. Số ảnh huấn luyện RAD-DINO: KHÔNG phải 882.775
+
+Bài gốc ghi **838k** ở phần đóng góp và Bảng 4 (Multi-CXR 838k). Nhưng còn một
+điểm tinh vi hơn:
+
+- 838k **bao gồm 90k ảnh RIÊNG TƯ từ USMix**.
+- Tác giả huấn luyện thêm một bản **chỉ dùng dữ liệu công khai** để chia sẻ.
+- Checkpoint `microsoft/rad-dino` ta đang dùng **chính là bản công khai đó**,
+  cộng các tập trong Bảng D.1 thì còn **~748k ảnh**.
+
+**Viết "dùng mô hình học từ 838k ảnh" là SAI** với checkpoint ta chạy. Người
+phản biện nắm bài gốc sẽ bắt ngay. Cách viết đúng: RAD-DINO được đề xuất với
+838k, còn checkpoint công khai dùng ở đây huấn luyện trên tập con công khai.
+
+Số tham số: bài ghi **87M** (ta đo được 86,6M trong trọng số đã tải).
+
+### 2. Nguồn bộ 241 cặp ảnh khử xương: KHÔNG phải Gusarev
+
+Gusarev và cs. 2017 là bài **phương pháp** (autoencoder/CNN), họ *dùng* dữ liệu
+chứ không tạo ra nó. Nguồn đúng là hai bài:
+
+- **Shiraishi và cs. 2000** — ảnh JSRT gốc.
+- **Juhász, Horváth, Nikházy, Horváth, Horváth 2010**, MEDICON, tr. 359–362 —
+  bản đã khử xương (BSE-JSRT).
+
+Kaggle `hmchuong/xray-bone-shadow-supression` chỉ là **nơi phân phối lại**, ghi
+như điểm truy cập chứ không phải nguồn. JSRT có 247 ảnh, bản khử xương phủ 241.
+Vẫn trích Gusarev được, nhưng như một phương pháp trước đó để so sánh.
+
+### 3. Điểm CÓ LỢI: Phụ lục C.1 của bài RAD-DINO
+
+Chính tác giả RAD-DINO ghi nhận hiệu năng **giảm ở độ phân giải thấp với tổn
+thương khó thấy** (tràn khí màng phổi, ống dẫn lưu) và nhấn mạnh cần độ phân
+giải cao để phát hiện dấu hiệu tinh vi.
+
+Đây là chỗ chống lưng mạnh: phát hiện của ta về nhóm subtlety 1 **không phải bất
+thường** mà nhất quán với hạn chế đã biết của chính mô hình đó. Đã đưa vào phần
+Thảo luận.
 
 ## 9. Cần biết khi viết bài
 

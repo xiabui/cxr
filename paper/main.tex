@@ -66,9 +66,9 @@ points of run-to-run spread from random initialisation are absorbed into what
 that interval presents as sampling error.
 
 Detection of the most subtle stratum stays between 0\% and 8\% across every
-configuration, including one built on a backbone pre-trained on 838{,}000
-radiographs, and does not move even under a manipulation that halves overall
-performance. Applied unchanged to 1{,}426 VinDr-CXR images, the detector reaches
+configuration, including one built on a large-scale chest-radiograph
+foundation model, and does not move even under a manipulation that halves
+overall performance. Applied unchanged to 1{,}426 VinDr-CXR images, the detector reaches
 16.5\% $[14.7, 18.3]$ against 43.3\% internally, under a match tolerance more
 generous than the internal one.
 
@@ -169,16 +169,24 @@ remedy but does not evaluate it. Our study should be read as a test of that
 proposal rather than as an independent idea.
 
 \paragraph{Bone suppression.}
-Suppressing rib and clavicle shadows is an established pre-processing step, and
-recent generative models reconstruct bone-free radiographs with high fidelity
---- Ibrahim~et~al.~\cite{ibrahim2025bonesup} report SSIM $0.99$ on JSRT. That
+Suppressing rib and clavicle shadows is an established pre-processing step.
+Early learned approaches trained autoencoders and convolutional networks to
+regress the soft-tissue image~\cite{gusarev2017bonesup}, and recent generative
+models reconstruct bone-free radiographs with high fidelity ---
+Ibrahim~et~al.~\cite{ibrahim2025bonesup} report SSIM $0.99$ on JSRT. That
 literature is evaluated on image-reconstruction quality, not on whether
 suppression improves lesion \emph{detection}, and never per subtlety stratum.
 The gap we address is the downstream one.
 
 \paragraph{Foundation models for medical imaging.}
 RAD-DINO~\cite{perezgarcia2024raddino} is a self-supervised vision transformer
-trained on a large corpus of chest radiographs.
+trained on a large corpus of chest radiographs. One detail matters for
+interpreting our results. RAD-DINO as proposed was trained on 838k images, of
+which 90k come from a private cohort; the authors additionally trained a
+public-data-only variant for release. The \texttt{microsoft/rad-dino} checkpoint
+we use is that public variant, whose constituent datasets sum to roughly 748k
+images. We therefore do not attribute the 838k figure to the model we actually
+ran.
 Muthyala~et~al.~\cite{muthyala2026frozen} probe five frozen vision transformers,
 RAD-DINO among them, and show that small-lesion signal is discarded at the
 global-aggregation step while remaining recoverable from patch tokens. Their
@@ -219,10 +227,13 @@ noisy~\cite{oakdenrayner2020exploring}; we use it only for representation
 learning and never for evaluation.
 
 \paragraph{Bone-shadow pairs.}
-241 paired radiographs with and without bone shadow, derived from
-dual-energy subtraction in the manner of
-Gusarev~et~al.~\cite{gusarev2017bonesup}, were used to train the suppression
-network described below.
+241 paired radiographs with and without bone shadow were used to train the
+suppression network described below. The originals are the JSRT
+images~\cite{shiraishi2000jsrt}; the bone-suppressed counterparts are the
+BSE-JSRT set produced by Juh\'asz~et~al.~\cite{juhasz2010bse}. JSRT contains 247
+images and the bone-suppressed release covers 241 of them. We obtained the pair
+set through a Kaggle redistribution, which is an access point rather than a
+source.
 
 \subsection{Detection Framework}
 
@@ -247,8 +258,9 @@ our knowledge, documented for this class of loss.
   \item[Bone suppression + attention.] The same encoder with a second input
         channel carrying a bone-suppressed image produced by a U-Net trained on
         the paired data, plus CBAM attention blocks~\cite{woo2018cbam}.
-  \item[Foundation model.] RAD-DINO with all weights frozen, used as a feature
-        extractor. Input channels are $[\text{original}, \text{bone-suppressed},
+  \item[Foundation model.] The public \texttt{microsoft/rad-dino} checkpoint
+        (87M parameters as reported; 86.6M in the released weights) with all
+        weights frozen, used as a feature extractor. Input channels are $[\text{original}, \text{bone-suppressed},
         \text{original}]$. A lightweight convolutional decoder is trained on the
         extracted features.
 \end{description}
@@ -554,8 +566,8 @@ transformed inputs, so augmented images fall outside the distribution its
 features were learned on. That explanation predicts something testable. If it is
 right, allowing the backbone to adapt should remove the penalty.
 
-We unfroze the last four transformer blocks of RAD-DINO (28.4M of 86.6M
-parameters) and repeated the contrast. Both arms use identical settings
+We unfroze the last four transformer blocks of RAD-DINO (28.4M of the
+checkpoint's 86.6M parameters) and repeated the contrast. Both arms use identical settings
 --- four unfrozen blocks, 20 epochs, five folds, batch 2, seed 42 --- and differ
 only in whether augmentation is applied.
 
@@ -657,9 +669,8 @@ matched to JSRT.
 
 Across every configuration tested, sensitivity on subtlety level 1 ranges from
 0\% to 8\% --- between zero and two nodules out of 25. This includes the
-RAD-DINO configuration, whose backbone was pre-trained on 838{,}000 chest
-radiographs. Scale of pre-training does not, by itself, solve the hardest
-detection problem in this dataset.
+RAD-DINO configuration. Scale of pre-training does not, by itself, solve the
+hardest detection problem in this dataset.
 
 Table~\ref{tab:aug} sharpens the point from the opposite direction. Level 1 is
 not merely unresponsive to changes that \emph{help}; it is equally unresponsive
@@ -712,6 +723,20 @@ this literature. It cost one additional experiment to check, and had the penalty
 persisted under fine-tuning we would have had to withdraw the explanation
 entirely.
 
+\paragraph{The hardest stratum, and what the backbone's authors already knew.}
+Our failure on subtlety level 1 is not an anomalous result from an unusual
+pipeline. The RAD-DINO authors report in their own appendix that performance
+degrades at reduced input resolution specifically for subtle findings such as
+pneumothorax and chest drains, and conclude that high resolution is needed to
+detect fine-grained signs~\cite{perezgarcia2024raddino}. Our finding is the
+detection analogue of that limitation, measured on a graded difficulty scale:
+the stratum that resists every configuration is exactly the one the backbone's
+own developers flag as resolution-sensitive. Read together with
+Muthyala~et~al.~\cite{muthyala2026frozen}, who locate the loss at the
+global-aggregation step, the picture is consistent --- though neither
+explanation is sufficient here, since our decoder already reads patch tokens at
+the native grid.
+
 \paragraph{Relation to prior findings.}
 Our observation that frozen foundation features lose small-lesion signal
 reproduces a result published independently~\cite{muthyala2026frozen}. We regard the
@@ -738,8 +763,8 @@ generalisation.
         direct consequence, and the stratified intervals are very wide.
   \item \textbf{One nodule per image.} JSRT contains a single nodule per
         positive case, which does not reflect clinical reality.
-  \item \textbf{Mostly frozen backbone.} The main configurations use RAD-DINO
-        purely as a feature extractor, so those results characterise frozen
+  \item \textbf{Mostly frozen backbone.} The main configurations use the public
+        RAD-DINO checkpoint purely as a feature extractor, so those results characterise frozen
         features and not the model's ceiling. The partial fine-tuning of
         Section~\ref{sec:ft} uses a shorter protocol (five folds, 20 epochs) and
         a single seed, so it supports a qualitative conclusion about the
@@ -783,7 +808,7 @@ together, and that they report gains per stratum rather than in aggregate.
 
 One finding survives this scrutiny. Detection of the most subtle nodules
 remains between 0\% and 8\% across every configuration we tested, including one
-built on a backbone pre-trained on 838{,}000 radiographs, and it does not move
+built on a large-scale chest-radiograph foundation model, and it does not move
 even under a manipulation severe enough to halve overall performance. The
 hardest and most clinically valuable stratum is not addressed by any method
 examined here, and scale of pre-training does not address it either.
