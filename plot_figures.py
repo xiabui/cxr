@@ -185,11 +185,17 @@ def fig_forest(pairs, out, B, seed):
 def main(a):
     os.makedirs(a.out, exist_ok=True)
     style()
+    # CẢ BA phải cùng một seed. Bản trước lấy plain/unet ở seed 0 nhưng
+    # augmentation ở seed 42 — trộn seed trong cùng một hình thì phần chênh
+    # lệch giữa các đường lẫn cả nhiễu khởi tạo, không còn đọc được.
     runs = {
-        "plain": ("RAD-DINO, 3-channel", load_scores("runs/scores_plain_s0.json")),
-        "unet":  ("+ bone suppression",  load_scores("runs/scores_unet_s0.json")),
+        "plain": ("RAD-DINO, 3-channel", load_scores("runs/scores_raddino_plain.json")),
+        "unet":  ("+ bone suppression",  load_scores("runs/scores_unet_kfold.json")),
         "aug":   ("+ augmentation",      load_scores("runs/scores_unetaug_kfold.json")),
     }
+    seeds = {k: d.get("seed") for k, (_, d) in runs.items()}
+    assert len(set(seeds.values())) == 1, f"LỆCH SEED giữa các cấu hình: {seeds}"
+    print(f"Tất cả cấu hình dùng seed {next(iter(seeds.values()))}")
     print("Đang vẽ:")
     fig_froc(runs, a.out, a.B, a.seed)
     fig_strat(runs, a.out, a.B, a.seed)

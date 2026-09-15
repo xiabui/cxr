@@ -29,8 +29,8 @@
 \newcommand{\pending}[1]{\textcolor{orange}{\textbf{[PENDING: #1]}}}
 
 \title{\textbf{Subtlety-Stratified Evaluation of Nodule Detection in Chest
-Radiographs: Aggregate Gains Fall Within Noise While the Hardest Stratum
-Remains Unsolved}}
+Radiographs: Aggregate Gains Land on the Easiest Cases While the Hardest
+Stratum Remains Unsolved}}
 
 \author{\todo{authors, affiliations, e-mail}}
 \date{}
@@ -50,7 +50,7 @@ configurations on the JSRT dataset (247 images, 154 nodules) stratified by the
 five-level radiologist subtlety rating, and we attach confidence intervals to
 every stratified figure using an image-level cluster bootstrap.
 
-Three results follow. First, stratification reverses the ordering suggested by
+Four results follow. First, stratification reverses the ordering suggested by
 aggregate CPM: a configuration that looks better on average can be worse on the
 subtle strata. Second, bone suppression yields a small but reproducible
 aggregate gain of $+2.9$ CPM points (95\% CI $[+0.7, +5.1]$, positive in all
@@ -67,7 +67,7 @@ stratum stays between 0\% and 8\% across every configuration tested, including
 one built on a foundation model pre-trained on 838{,}000 radiographs, and does
 not move even under a manipulation that halves overall performance.
 
-We also test, rather than assert, the usual explanation for why data
+Fourth, we test rather than assert the usual explanation for why data
 augmentation degrades a frozen-backbone detector. Augmentation costs 22.1 CPM
 points with the backbone frozen; unfreezing four transformer blocks reduces that
 penalty to 3.1 points with an interval containing zero, supporting the account
@@ -132,7 +132,14 @@ Our contributions:
         under study.
   \item Evidence that the most subtle stratum resists every configuration
         tested, including frozen foundation-model features.
+  \item A direct test of the standard explanation for why augmentation degrades
+        a frozen-backbone detector, by partially unfreezing the backbone.
 \end{enumerate}
+
+All quantitative claims rest on ten-fold cross-validation with fixed seeds and
+retained per-image scores, so every interval in this paper can be recomputed
+without retraining. Leave-one-out figures from our earlier experiments appear
+once, in Table~\ref{tab:loocv}, explicitly marked as single unseeded runs.
 
 We make no claim of priority. Subtlety-stratified analysis of JSRT has been
 carried out before, and the specific remedy we evaluate --- bone suppression
@@ -210,6 +217,7 @@ all. We note this because it cost considerable debugging time and is not, to
 our knowledge, documented for this class of loss.
 
 \subsection{Configurations Compared}
+\label{sec:configs}
 
 \begin{description}
   \item[Baseline.] ResNet-34 encoder pre-trained on NIH ChestX-ray14, single
@@ -247,7 +255,9 @@ training data into the test fold.
 \label{sec:bootstrap}
 
 Every figure we report carries a 95\% bias-corrected and accelerated (BCa)
-bootstrap confidence interval over $B = 2000$ resamples. Three design choices
+bootstrap confidence interval over $B = 2000$ resamples with a fixed resampling
+seed, so the intervals are exactly reproducible; different resampling seeds move
+interval endpoints by a few tenths of a point. Three design choices
 matter, and getting any of them wrong produces intervals that are too narrow.
 
 \paragraph{Resample images, not nodules.}
@@ -284,8 +294,14 @@ increases across the three configurations.
 
 \begin{table}[t]
 \centering
-\caption{Leave-one-out cross-validation on JSRT. CPM is the mean sensitivity
-over six false-positive rates. \pending{confidence intervals for these three rows: run \texttt{bootstrap\_ci.py} on LOOCV scores}}
+\caption{Leave-one-out cross-validation on JSRT, from our earlier experiments.
+\textbf{Each row is a single training run with no fixed random seed}, and
+per-image detection scores were not retained, so no confidence interval can be
+computed for them retrospectively. By the standard this paper argues for, these
+figures establish nothing on their own; they are reported for continuity with
+the configurations described in Section~\ref{sec:configs}, and every claim we
+make rests on the seeded ten-fold experiments of
+Sections~\ref{sec:noise}--\ref{sec:ft} instead.}
 \label{tab:loocv}
 \begin{tabular}{lcc}
 \toprule
@@ -293,7 +309,7 @@ Configuration & Architecture & CPM (\%) \\
 \midrule
 Baseline                        & ResNet-34                  & 29.5 \\
 + bone suppression + attention  & ResNet-34 + U-Net + CBAM   & 34.2 \\
-Foundation model                & RAD-DINO (frozen) + U-Net  & 42.5 \\
+Foundation model                & RAD-DINO (frozen) + U-Net  & 41.9 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -320,8 +336,10 @@ conceals this trade entirely.
 
 \begin{table}[t]
 \centering
-\caption{Sensitivity by subtlety level at 1.0 false positive per image.
-Level 1 is the most subtle. Note the small denominators.}
+\caption{Sensitivity by subtlety level at 1.0 false positive per image,
+from the same earlier single unseeded runs as Table~\ref{tab:loocv} and subject
+to the same caveat. Level 1 is the most subtle. Note the small denominators: at
+$n=12$ one nodule is 8.3 percentage points.}
 \label{tab:strat}
 \begin{tabular}{lcccc}
 \toprule
@@ -576,12 +594,14 @@ neither raise nor lower.
 \section{Discussion}
 
 \paragraph{What stratification buys.}
-The central observation of this paper is visible in Tables~\ref{tab:loocv}
-and~\ref{tab:strat} read together. Aggregate CPM rises monotonically across the
-three configurations, and on that evidence one would recommend the third. The
-stratified table shows the second configuration trading easy-nodule sensitivity
-for hard-nodule sensitivity --- a trade that may well be desirable clinically,
-and one that aggregate reporting renders invisible in either direction.
+The pattern is visible in Tables~\ref{tab:loocv} and~\ref{tab:strat} read
+together. Aggregate CPM rises monotonically across the three configurations, and
+on that evidence one would recommend the third. The stratified table shows the
+second configuration trading easy-nodule sensitivity for hard-nodule sensitivity
+--- a trade that may well be desirable clinically, and one that aggregate
+reporting renders invisible in either direction. Those two tables are single
+unseeded runs and we draw no inference from them; the same phenomenon appears in
+the seeded experiments below, where it can be quantified.
 
 \paragraph{What confidence intervals take away.}
 Having argued that stratification reveals structure hidden by aggregation, we
