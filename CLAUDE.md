@@ -76,6 +76,49 @@ ResNet34: baseline 29,3% | +U-Net 29,7% | +U-Net+CBAM 37,6% | +U-Net+weighted lo
 
 RAD-DINO (frozen): 3 kênh lặp 36,5% | +U-Net **44,4%** | +U-Net+augmentation **23,9%**
 
+### CẬP NHẬT 15/09/2026 (3) — LOOCV CÓ GIEO HẠT XONG, VÀ MỘT BẤT ĐỒNG QUAN TRỌNG
+
+| Cấu hình LOOCV (seed 42, có lưu điểm thô) | CPM |
+|---|---|
+| RAD-DINO 3 kênh lặp | 40,3% [34,0; 48,0] |
+| + khử xương U-Net | 44,6% [37,7; 51,3] |
+| **Hiệu số bắt cặp** | **+4,3 [+0,7; +8,6]**, p=0,019 |
+
+Tổng thể khớp với 10-fold gộp 5 seed (+2,9 [+0,7; +5,1]). **Hiệu ứng khử xương
+tái lập qua hai giao thức.**
+
+**NHƯNG LỢI ÍCH RƠI VÀO NHÓM NÀO THÌ KHÔNG TÁI LẬP:**
+
+| Mức | 10-fold gộp 5 seed | LOOCV 1 seed |
+|---|---|---|
+| 1 | −0,8 | +0,0 |
+| 2 | +1,4 | **+17,2 [+3,8; +31,0]** ✱ |
+| 3 | +1,6 | +4,0 |
+| 4 | **+6,3 [+1,9; +11,4]** ✱ | +13,2 [0,0; +24,5] |
+| 5 | +10,0 | −16,7 |
+
+10-fold chỉ vào nhóm DỄ, LOOCV chỉ vào nhóm KHÓ. Cùng ảnh, cùng mô hình, cùng
+kênh khử xương.
+
+**Cách xử lý trong bài:** báo cáo CẢ HAI, không chọn cái đẹp hơn. Coi 10-fold
+gộp seed là đáng tin hơn (đã trung bình qua 5 seed, loại được nhiễu khởi tạo
+~4 điểm), nhưng nêu thẳng bất đồng như một KẾT QUẢ. Nó chính là luận điểm của
+bài quay lại áp dụng cho chính bài: với 12–50 nốt mỗi nhóm, ước lượng phân tầng
+không đủ vững để chống đỡ một lập luận cơ chế, dù hiệu ứng tổng thể đứng vững.
+
+Thứ sống sót qua cả hai: khử xương cộng vài điểm CPM, và **nhóm 1 không nhúc
+nhích ở cả hai**.
+
+### BÀI HỌC VẬN HÀNH: đừng sửa script shell đang chạy
+
+Sửa `loocvrun.sh` lúc 06:39 trong khi nó đang chạy. Bash đọc script theo vị trí
+byte; ghi đè làm vị trí lệch, và khi nhánh plain xong nó **chạy lại nhánh plain**
+thay vì sang unet. Mất ~4 giờ. Dấu hiệu nhận biết: log chỉ có MỘT dòng tiêu đề
+nhưng có HAI tiến trình cùng tag.
+
+Cách đúng: sửa xong thì chạy bản mới ở lần sau, hoặc gọi thẳng python không qua
+script trung gian.
+
 ### CẬP NHẬT 15/09/2026 (2) — KIỂM ĐỊNH NGOẠI VinDr ĐÃ XONG
 
 Dữ liệu lấy từ Kaggle `vinbigdata-chest-xray-abnormalities-detection` (phải tự

@@ -56,25 +56,27 @@ stratified by the five-level radiologist subtlety rating, attaching an
 image-level cluster bootstrap interval to every figure.
 
 Bone suppression, proposed but not tested by earlier stratified work on this
-dataset, yields a reproducible gain of $+2.9$ CPM points (95\% CI
-$[+0.7, +5.1]$, positive across five seeds). Stratified, that gain falls almost
-entirely on the easy levels: only level 4 excludes zero, and the estimate for
-the most subtle level is negative. Establishing this required separating
-training from sampling uncertainty, which are routinely conflated: a single-run
-bootstrap gives $[-0.9, +6.3]$ and hides the effect, because roughly four CPM
-points of run-to-run spread from random initialisation are absorbed into what
-that interval presents as sampling error.
+dataset, raises aggregate CPM reproducibly: $+2.9$ points
+$[+0.7, +5.1]$ across five seeds under ten-fold, and $+4.3$ $[+0.7, +8.6]$ under
+leave-one-out. \emph{Where} that gain sits does not replicate --- ten-fold
+attributes it to the second-easiest stratum, leave-one-out to the second-hardest
+--- and we report this rather than resolve it, because at 12--50 nodules per
+stratum a per-stratum estimate cannot carry a mechanistic claim.
 
-Detection of the most subtle stratum stays between 0\% and 8\% across every
-configuration, including one built on a large-scale chest-radiograph
-foundation model, and does not move even under a manipulation that halves
-overall performance. Applied unchanged to 1{,}426 VinDr-CXR images, the detector reaches
-16.5\% $[14.7, 18.3]$ against 43.3\% internally, under a match tolerance more
-generous than the internal one.
+Establishing even the aggregate effect required separating training from
+sampling uncertainty, which are routinely conflated: a single-run bootstrap
+gives $[-0.9, +6.3]$ and hides the effect, because roughly four CPM points of
+run-to-run spread from random initialisation are absorbed into what that
+interval presents as sampling error.
+
+Detection of the most subtle stratum stays between 0\% and 8\% under every
+configuration and both protocols, and does not move even under a manipulation
+that halves overall performance. Applied unchanged to 1{,}426 VinDr-CXR images,
+the detector reaches 16.5\% $[14.7, 18.3]$ against 43.3\% internally, under a
+match tolerance more generous than the internal one.
 
 We claim no novelty for stratified evaluation or for the frozen-backbone
-observation, both reported previously. Our contribution is the uncertainty such
-evaluation actually carries.
+observation, both reported previously.
 
 \medskip
 \noindent\textbf{Keywords:} chest radiography, nodule detection, subtlety
@@ -370,25 +372,30 @@ increases across the three configurations.
 
 \begin{table}[t]
 \centering
-\caption{Leave-one-out cross-validation on JSRT, from our earlier experiments.
-\textbf{Each row is a single training run with no fixed random seed}, and
-per-image detection scores were not retained, so no confidence interval can be
-computed for them retrospectively. By the standard this paper argues for, these
-figures establish nothing on their own; they are reported for continuity with
-the configurations described in Section~\ref{sec:configs}, and every claim we
-make rests on the seeded ten-fold experiments of
-Sections~\ref{sec:noise}--\ref{sec:ft} instead.}
+\caption{Leave-one-out cross-validation on JSRT. The two RAD-DINO rows are
+seeded runs with per-image scores retained, so intervals are computable; the
+ResNet-34 rows are earlier single runs with no fixed seed and no retained
+scores, and establish nothing on their own.}
 \label{tab:loocv}
-\begin{tabular}{lcc}
+\begin{tabular}{llc}
 \toprule
-Configuration & Architecture & CPM (\%) \\
+Configuration & Architecture & CPM (\%) [95\% CI] \\
 \midrule
-Baseline                        & ResNet-34                  & 29.5 \\
-+ bone suppression + attention  & ResNet-34 + U-Net + CBAM   & 34.2 \\
-Foundation model                & RAD-DINO (frozen) + U-Net  & 41.9 \\
+\multicolumn{3}{l}{\emph{Seeded, intervals computable:}} \\
+3-channel        & RAD-DINO (frozen)          & 40.3 $[34.0, 48.0]$ \\
++ bone suppression & RAD-DINO (frozen) + U-Net & 44.6 $[37.7, 51.3]$ \\
+\midrule
+\multicolumn{3}{l}{\emph{Earlier single unseeded runs, no interval:}} \\
+Baseline                       & ResNet-34                & 29.5 \\
++ bone suppression + attention & ResNet-34 + U-Net + CBAM & 34.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+Under leave-one-out, bone suppression gives $+4.3$ CPM points
+$[+0.7, +8.6]$, an interval excluding zero and consistent in sign and rough
+magnitude with the $+2.9$ $[+0.7, +5.1]$ obtained from five seeds under ten-fold
+(Section~\ref{sec:twonoise}). The aggregate effect replicates across protocols.
 
 \begin{figure}[t]
 \centering
@@ -554,12 +561,59 @@ The point estimate on level 1 is negative. The aggregate gain of 2.9 CPM points
 is therefore driven by nodules that were already fairly visible, and there is no
 evidence of improvement where improvement would matter.
 
-Figure~\ref{fig:forest} shows this at a glance. This is the central
-observation of the paper, stated precisely. Bone
-suppression produces a statistically defensible improvement in aggregate CPM.
-Reported as a single number, that improvement would be taken as progress on
-nodule detection. Stratified, it is progress on the nodules a radiologist was
-least likely to miss.
+Figure~\ref{fig:forest} shows this at a glance. Bone suppression produces a
+statistically defensible improvement in aggregate CPM. Reported as a single
+number, that improvement would be taken as progress on nodule detection. Under
+this protocol, stratifying it shows progress on the nodules a radiologist was
+least likely to miss. Section~\ref{sec:unstable} shows that a second protocol
+relocates the gain to a different stratum, so this particular attribution is
+provisional; what is not provisional is that one aggregate number cannot tell
+you which cases improved.
+
+\subsection{Which Stratum Benefits Is Not Stable Across Protocols}
+\label{sec:unstable}
+
+The aggregate effect replicates. The stratified attribution does not.
+
+\begin{table}[t]
+\centering
+\caption{Bone-suppression gain per subtlety level at 1.0 FP/image under two
+protocols. Bold marks intervals excluding zero. The protocols agree on the
+aggregate but disagree on which stratum carries it.}
+\label{tab:unstable}
+\begin{tabular}{lcc}
+\toprule
+Subtlety level & Ten-fold, 5 seeds pooled & Leave-one-out, 1 seed \\
+\midrule
+1 --- extremely subtle & $-0.8$ & $+0.0$ \\
+2 --- very subtle      & $+1.4$ & $\mathbf{+17.2}$ $[+3.8, +31.0]$ \\
+3 --- moderate         & $+1.6$ & $+4.0$ \\
+4 --- fairly obvious   & $\mathbf{+6.3}$ $[+1.9, +11.4]$ & $+13.2$ $[0.0, +24.5]$ \\
+5 --- obvious          & $+10.0$ & $-16.7$ \\
+\midrule
+Aggregate CPM & $\mathbf{+2.9}$ $[+0.7, +5.1]$ & $\mathbf{+4.3}$ $[+0.7, +8.6]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Under ten-fold with seeds pooled, the only stratum clearing zero is level 4 and
+level 5 gains 10 points; under leave-one-out with a single seed, level 2 clears
+zero with a 17-point gain while level 5 \emph{loses} 17. Both analyses use the
+same images, the same model and the same bone-suppression channel.
+
+We take the pooled ten-fold estimate as the more reliable of the two, because it
+averages over five seeds and Section~\ref{sec:noise} measured roughly four CPM
+points of run-to-run spread that a single run cannot remove. But we do not think
+the disagreement should be explained away. It is the paper's own thesis turned on
+its own results: with 12 to 50 nodules per stratum, a per-stratum estimate is not
+stable enough to support a claim about \emph{where} a method helps, even when the
+aggregate effect it produces is solid. Readers --- ourselves included --- should
+resist the temptation to build a mechanistic story on top of a stratified
+pattern at this sample size.
+
+What survives both protocols is narrower and, we think, more trustworthy: bone
+suppression improves aggregate CPM by a few points, and level 1 moves in neither
+analysis.
 
 \subsection{One Contrast Does Survive: Augmentation Under a Frozen Backbone}
 \label{sec:aug}
@@ -843,6 +897,12 @@ Evaluating nodule detection on chest radiographs by a single aggregate metric
 hides the behaviour that matters clinically. Stratifying by radiologist-assigned
 subtlety exposes trade-offs between easy and hard nodules that aggregate CPM
 conceals in both directions.
+
+Two protocols on the same data agree that bone suppression raises aggregate CPM
+by a few points and disagree about which difficulty stratum supplies the gain.
+We report both rather than choose the flattering one: at 12 to 50 nodules per
+stratum, per-stratum attribution is not stable enough to carry a mechanistic
+claim, even when the aggregate effect behind it is solid.
 
 Quantifying uncertainty properly requires separating training noise from
 sampling noise. On this dataset a run-to-run spread of roughly four CPM points
