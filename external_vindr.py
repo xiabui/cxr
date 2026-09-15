@@ -42,18 +42,24 @@ def preprocess(gray, size, clip=2.0, grid=8):
 
 @torch.no_grad()
 def gen_bone_suppressed(u8, bs_model, device, size, blend=0.7):
-    """Chạy U-Net khử xương, pha trộn với ảnh gốc như khi làm trên JSRT."""
+    """Sinh kênh khử xương y HỆT cách đã làm cho JSRT.
+
+    Dùng thẳng suppress_image_masked của src, tức là bản CÓ MẶT NẠ PHỔI:
+    trong phổi thì pha khử xương với gốc theo blend, ngoài phổi giữ nguyên gốc.
+
+    Bản trước ở đây tự viết lại thành phép trộn phẳng không mặt nạ. Hậu quả:
+    kênh thứ hai của VinDr lệch phân bố so với kênh mà mô hình đã học trên
+    JSRT, và mô hình sẽ cho số thấp mà không báo lỗi gì — rồi bị đọc nhầm
+    thành 'tổng quát hóa kém'. Gọi lại đúng hàm của dự án là cách duy nhất
+    bảo đảm hai bên khớp nhau.
+    """
     if bs_model is None:
         return u8
-    ins = bs_model.get("in_size", 256)
-    x = cv2.resize(u8, (ins, ins)).astype(np.float32) / 255.0
-    t = torch.from_numpy(x[None, None]).to(device)
-    y = bs_model["net"](t)[0, 0].cpu().numpy()
-    y = np.clip(y, 0, 1)
-    y = cv2.resize(y, (size, size))
-    base = u8.astype(np.float32) / 255.0
-    out = blend * y + (1 - blend) * base
-    return (np.clip(out, 0, 1) * 255).astype(np.uint8)
+    from src.bone_suppression import suppress_image_masked
+    img01 = u8.astype(np.float32) / 255.0
+    bs = suppress_image_masked(bs_model["net"], img01, device,
+                               bs_model["in_size"], blend=blend)
+    return (np.clip(bs, 0, 1) * 255).astype(np.uint8)
 
 
 def main(a):
@@ -67,14 +73,14 @@ def main(a):
     # ---- U-Net khử xương ----
     bs_model = None
     if a.bs_ckpt and os.path.exists(a.bs_ckpt):
-        from src.bone_suppression import UNet
-        ck = torch.load(a.bs_ckpt, map_location=device, weights_only=False)
-        state = ck.get("model_state", ck.get("state", ck))
-        net = UNet().to(device)
-        net.load_state_dict(state); net.eval()
+        # dùng loader của chính dự án: tên lớp là BoneSuppressionUNet, và kích
+        # thước làm việc được lưu trong checkpoint chứ không tự đặt
+        from src.bone_suppression import load_bs_model
+        net, bs_size = load_bs_model(a.bs_ckpt, device)
         for p in net.parameters(): p.requires_grad_(False)
-        bs_model = {"net": net, "in_size": a.bs_size}
-        print(f"U-Net khử xương: {a.bs_ckpt} (chạy ở {a.bs_size}px, blend {a.blend})")
+        bs_model = {"net": net, "in_size": bs_size}
+        print(f"U-Net khử xương: {a.bs_ckpt} ({bs_size}px, mặt nạ phổi, "
+              f"blend {a.blend}) — giống hệt gen_bs_channel.py")
     else:
         print("KHÔNG dùng kênh khử xương (thiếu --bs-ckpt)")
 
@@ -203,7 +209,6 @@ if __name__ == "__main__":
     p.add_argument("--head", default="checkpoints/raddino_head.pt")
     p.add_argument("--config", default="configs/jsrt_10fold.yaml")
     p.add_argument("--bs-ckpt", default="checkpoints/bone_suppression_unet.pt")
-    p.add_argument("--bs-size", type=int, default=256)
     p.add_argument("--blend", type=float, default=0.7)
     p.add_argument("--peak-dist", type=int, default=10)
     p.add_argument("--margin", type=float, default=0.0,

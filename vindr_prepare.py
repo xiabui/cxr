@@ -130,7 +130,19 @@ def main(a):
         ids |= set(normals)
         print(f"Thêm {len(normals)} ảnh không có nốt để đo dương tính giả")
 
-    gt, done, miss, n_flip = {}, 0, 0, 0
+    # bảng kích thước gốc (tuỳ chọn)
+    meta_dims = None
+    if a.meta_csv:
+        md = pd.read_csv(a.meta_csv)
+        need2 = {"image_id", "dim0", "dim1"}
+        if not need2 <= set(md.columns):
+            raise SystemExit(f"{a.meta_csv} thiếu cột {need2 - set(md.columns)}")
+        # quy ước numpy: dim0 = số hàng = CHIỀU CAO, dim1 = số cột = CHIỀU RỘNG
+        meta_dims = {str(r.image_id): (float(r.dim0), float(r.dim1))
+                     for r in md.itertuples()}
+        print(f"Kích thước gốc lấy từ {a.meta_csv}: {len(meta_dims)} ảnh")
+
+    gt, done, miss, n_flip, n_oob = {}, 0, 0, 0, 0
     for iid in sorted(ids):
         src = None
         for ext in (".dicom", ".dcm", ".png", ".jpg"):
@@ -148,16 +160,32 @@ def main(a):
         if not a.no_match_convention:
             img, flipped = match_convention(img, want_lung_bright=True)
             n_flip += int(flipped)
-        h0, w0 = img.shape
+        # Kích thước GỐC để quy đổi toạ độ hộp. Nếu ảnh trên đĩa đã bị resize
+        # sẵn (ví dụ bộ PNG 512x512 dựng sẵn) thì img.shape KHÔNG phải kích
+        # thước gốc, và lấy nó sẽ cho tỉ lệ 1:1 — hộp giữ nguyên toạ độ gốc
+        # (có thể tới hơn 3000) trên ảnh 512, tức sai hoàn toàn mà không báo lỗi.
+        if meta_dims is not None:
+            if iid not in meta_dims:
+                miss += 1; continue
+            h0, w0 = meta_dims[iid]
+        else:
+            h0, w0 = img.shape
         out_png = os.path.join(a.out_dir, "images", iid + ".png")
         cv2.imwrite(out_png, cv2.resize(img, (a.size, a.size)))
 
         sx, sy = a.size / w0, a.size / h0
         merged = merge_boxes(by_img.get(iid, []), a.iou_thr, a.min_agree) \
             if has_rad else [(b, 1) for b in by_img.get(iid, [])]
-        gt[iid] = [{"box": [b[0]*sx, b[1]*sy, b[2]*sx, b[3]*sy],
-                    "cx": (b[0]+b[2])/2*sx, "cy": (b[1]+b[3])/2*sy,
-                    "n_rad": n} for b, n in merged]
+        boxes_scaled = [{"box": [b[0]*sx, b[1]*sy, b[2]*sx, b[3]*sy],
+                         "cx": (b[0]+b[2])/2*sx, "cy": (b[1]+b[3])/2*sy,
+                         "n_rad": n} for b, n in merged]
+        # Hộp phải nằm trong ảnh. Nếu tràn ra ngoài nhiều thì gần như chắc chắn
+        # đã gán nhầm chiều cao/chiều rộng, hoặc dùng sai bảng kích thước.
+        for bb in boxes_scaled:
+            x1, y1, x2, y2 = bb["box"]
+            if x2 > a.size * 1.02 or y2 > a.size * 1.02 or x1 < -1 or y1 < -1:
+                n_oob += 1
+        gt[iid] = boxes_scaled
         done += 1
 
     with open(os.path.join(a.out_dir, "vindr_gt.json"), "w") as f:
@@ -173,6 +201,12 @@ def main(a):
             print("  CẢNH BÁO: chỉ MỘT PHẦN ảnh bị đảo — nguồn dữ liệu không đồng nhất,"
                   " nên kiểm tra thủ công vài ảnh trước khi tin kết quả")
     print(f"  ảnh có nốt: {n_pos} | tổng số nốt sau gộp: {n_nod}")
+    if n_oob:
+        print(f"  CẢNH BÁO: {n_oob}/{n_nod} hộp nằm NGOÀI khung ảnh sau khi quy đổi.")
+        print("            Nhiều khả năng dim0/dim1 bị gán ngược, hoặc bảng kích"
+              " thước không khớp bộ ảnh. KHÔNG dùng kết quả này.")
+    else:
+        print(f"  mọi hộp đều nằm trong khung {a.size}x{a.size} — tỉ lệ quy đổi hợp lệ")
     print(f"  -> {a.out_dir}/images/ và {a.out_dir}/vindr_gt.json")
 
 
@@ -185,6 +219,10 @@ if __name__ == "__main__":
     p.add_argument("--iou-thr", type=float, default=0.3, help="ngưỡng IoU khi gộp hộp")
     p.add_argument("--min-agree", type=int, default=1,
                    help="số bác sĩ tối thiểu phải đồng ý (chỉ dùng cho tập train)")
+    p.add_argument("--meta-csv", default=None,
+                   help="CSV có image_id,dim0,dim1 = kích thước GỐC. BẮT BUỘC khi "
+                        "ảnh trên đĩa đã được resize sẵn, vì khi đó không suy ra "
+                        "được kích thước gốc từ chính ảnh.")
     p.add_argument("--no-match-convention", action="store_true",
                    help="TẮT việc tự đảo màu cho khớp quy ước JSRT. Chỉ dùng khi "
                         "bạn chắc chắn nguồn ảnh đã đúng quy ước.")
