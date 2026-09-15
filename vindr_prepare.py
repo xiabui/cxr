@@ -42,6 +42,36 @@ def read_dicom(path):
     return (arr * 255).astype(np.uint8)
 
 
+def lung_is_bright(img):
+    """Ảnh này theo quy ước phổi SÁNG hay phổi TỐI?
+
+    So độ sáng trung bình của hai vùng phổi (hai bên, khoảng giữa chiều cao)
+    với vùng trung thất (cột giữa). Trên X-quang ngực chuẩn, phổi chứa khí nên
+    TỐI hơn trung thất. JSRT sau tiền xử lý lại theo quy ước NGƯỢC LẠI.
+
+    Vì sao phải kiểm: ảnh PNG dựng sẵn không có header DICOM nên không biết
+    MONOCHROME1 hay MONOCHROME2. Nếu đưa ảnh đảo màu vào mô hình đã học trên
+    JSRT thì nó không báo lỗi — chỉ lặng lẽ cho ra số thấp, rồi bị đọc nhầm
+    thành 'tổng quát hóa kém'.
+    """
+    h, w = img.shape
+    a = img.astype(np.float32)
+    y0, y1 = int(0.35 * h), int(0.66 * h)
+    phoi = np.concatenate([a[y0:y1, int(0.18 * w):int(0.37 * w)].ravel(),
+                           a[y0:y1, int(0.63 * w):int(0.82 * w)].ravel()])
+    trung_that = a[y0:y1, int(0.46 * w):int(0.54 * w)].ravel()
+    return float(phoi.mean()) > float(trung_that.mean())
+
+
+def match_convention(img, want_lung_bright=True, verbose=False):
+    """Đảo ảnh nếu quy ước sáng/tối không khớp với tập huấn luyện."""
+    if lung_is_bright(img) == want_lung_bright:
+        return img, False
+    if verbose:
+        print("  -> đảo màu cho khớp quy ước của JSRT")
+    return (255 - img), True
+
+
 def iou(a, b):
     ix1, iy1 = max(a[0], b[0]), max(a[1], b[1])
     ix2, iy2 = min(a[2], b[2]), min(a[3], b[3])
@@ -100,7 +130,7 @@ def main(a):
         ids |= set(normals)
         print(f"Thêm {len(normals)} ảnh không có nốt để đo dương tính giả")
 
-    gt, done, miss = {}, 0, 0
+    gt, done, miss, n_flip = {}, 0, 0, 0
     for iid in sorted(ids):
         src = None
         for ext in (".dicom", ".dcm", ".png", ".jpg"):
@@ -115,6 +145,9 @@ def main(a):
             img = cv2.imread(src, cv2.IMREAD_GRAYSCALE)
         if img is None:
             miss += 1; continue
+        if not a.no_match_convention:
+            img, flipped = match_convention(img, want_lung_bright=True)
+            n_flip += int(flipped)
         h0, w0 = img.shape
         out_png = os.path.join(a.out_dir, "images", iid + ".png")
         cv2.imwrite(out_png, cv2.resize(img, (a.size, a.size)))
@@ -134,6 +167,11 @@ def main(a):
     n_nod = sum(len(v) for v in gt.values())
     n_pos = sum(1 for v in gt.values() if v)
     print(f"\nXong: {done} ảnh ({miss} ảnh không tìm thấy file)")
+    if not a.no_match_convention:
+        print(f"  đảo màu cho khớp quy ước JSRT (phổi sáng): {n_flip}/{done} ảnh")
+        if 0 < n_flip < done:
+            print("  CẢNH BÁO: chỉ MỘT PHẦN ảnh bị đảo — nguồn dữ liệu không đồng nhất,"
+                  " nên kiểm tra thủ công vài ảnh trước khi tin kết quả")
     print(f"  ảnh có nốt: {n_pos} | tổng số nốt sau gộp: {n_nod}")
     print(f"  -> {a.out_dir}/images/ và {a.out_dir}/vindr_gt.json")
 
@@ -147,6 +185,9 @@ if __name__ == "__main__":
     p.add_argument("--iou-thr", type=float, default=0.3, help="ngưỡng IoU khi gộp hộp")
     p.add_argument("--min-agree", type=int, default=1,
                    help="số bác sĩ tối thiểu phải đồng ý (chỉ dùng cho tập train)")
+    p.add_argument("--no-match-convention", action="store_true",
+                   help="TẮT việc tự đảo màu cho khớp quy ước JSRT. Chỉ dùng khi "
+                        "bạn chắc chắn nguồn ảnh đã đúng quy ước.")
     p.add_argument("--include-normal", type=int, default=500,
                    help="số ảnh không có nốt đưa vào để đo dương tính giả")
     main(p.parse_args())
