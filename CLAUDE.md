@@ -76,6 +76,34 @@ ResNet34: baseline 29,3% | +U-Net 29,7% | +U-Net+CBAM 37,6% | +U-Net+weighted lo
 
 RAD-DINO (frozen): 3 kênh lặp 36,5% | +U-Net **44,4%** | +U-Net+augmentation **23,9%**
 
+### CẬP NHẬT 15/09/2026 — tinh chỉnh một phần XONG, giả thuyết của phát hiện 2 ĐƯỢC XÁC NHẬN
+
+Mở băng 4 tầng cuối RAD-DINO (28,4/86,6 triệu tham số), hai nhánh chỉ khác
+`--variants`, đã kiểm lại từng tham số trong file kết quả: hợp lệ.
+
+| Backbone | Không tăng cường | Có tăng cường | Hiệu |
+|---|---|---|---|
+| Đóng băng (10 fold, 60 ep) | 43,3 | 21,2 | **−22,1 [−28,2; −16,1]** |
+| Mở 4 tầng (5 fold, 20 ep) | 42,2 | 39,1 | **−3,1 [−8,5; +2,1]** |
+
+**Hình phạt tụt từ 22,1 xuống 3,1 điểm, khoảng tin cậy chứa 0. Hai khoảng KHÔNG
+chồng lấn.** Lời giải thích trong bài — backbone đóng băng không thích nghi được
+nên ảnh biến đổi lệch khỏi phân bố tiền huấn luyện — đã được kiểm chứng, không
+còn là giả thuyết treo.
+
+Hai điều phải nói kèm khi viết:
+- Hai dòng dùng giao thức khác nhau (10 fold/60 ep so với 5 fold/20 ep), nên so
+  sánh HAI HIỆU SỐ là so chéo giao thức. Trong từng dòng thì có kiểm soát.
+- Nhánh tinh chỉnh chỉ một seed, mà nhiễu khởi tạo là ~4 điểm. Cú sụp từ 22 về
+  gần 0 nằm ngoài nhiễu đó rất xa; con số 3,1 còn lại thì không.
+
+**Tinh chỉnh KHÔNG cải thiện hiệu năng tổng thể**: 42,2% [35,3; 49,3] so với
+43,3% của backbone đóng băng + khử xương. Giá trị của nó là GIẢI THÍCH, không
+phải thực dụng.
+
+Ghi chú vận hành: tinh chỉnh CHẠY ĐƯỢC trên 6GB ở batch 2 (~0,5 phút mỗi
+fold-epoch, nhánh B mất 6 giờ 9 phút). Mục 8.4 không bị khoá vào Colab.
+
 ### CẬP NHẬT 14/09/2026 — 5 seed đã chạy xong, phát hiện 1 ĐỨNG VỮNG nhưng NHỎ HƠN NHIỀU
 
 Năm seed, 10-fold, bắt cặp trên cùng 247 ảnh (`seed_pooled_ci.py`):

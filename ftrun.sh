@@ -40,8 +40,10 @@ bad=[]
 for k in keys:
     same = a.get(k)==b.get(k)
     if not same: bad.append(k)
-    print(f"  {k:<10} {a.get(k)} / {b.get(k)}   {\"OK\" if same else \"LECH !!\"}")
-print(f"  variants   {a.get(\"variants\")} / {b.get(\"variants\")}   (day la yeu to DUY NHAT duoc phep khac)")
+    mark = "OK" if same else "LECH !!"
+    print(f"  {k:<10} {a.get(k)} / {b.get(k)}   {mark}")
+va, vb = a.get("variants"), b.get("variants")
+print(f"  variants   {va} / {vb}   (day la yeu to DUY NHAT duoc phep khac)")
 print("KET LUAN:", "hop le" if not bad else f"HONG - lech o {bad}")
 PYEND
 

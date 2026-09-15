@@ -67,6 +67,13 @@ stratum stays between 0\% and 8\% across every configuration tested, including
 one built on a foundation model pre-trained on 838{,}000 radiographs, and does
 not move even under a manipulation that halves overall performance.
 
+We also test, rather than assert, the usual explanation for why data
+augmentation degrades a frozen-backbone detector. Augmentation costs 22.1 CPM
+points with the backbone frozen; unfreezing four transformer blocks reduces that
+penalty to 3.1 points with an interval containing zero, supporting the account
+that the damage comes from the backbone's inability to adapt rather than from
+augmentation itself.
+
 We do not claim novelty for subtlety-stratified evaluation, which has been
 performed before \todo{cite}, nor for the observation that frozen foundation
 features suppress small-lesion signal, reported independently \todo{cite}. Our
@@ -461,6 +468,7 @@ nodule detection. Stratified, it is progress on the nodules a radiologist was
 least likely to miss.
 
 \subsection{One Contrast Does Survive: Augmentation Under a Frozen Backbone}
+\label{sec:aug}
 
 Not every difference is lost in noise. Table~\ref{tab:aug} reports the effect of
 augmenting the training data while the backbone stays frozen. CPM falls by 22.1
@@ -496,6 +504,55 @@ does not move at all. A manipulation severe enough to halve overall performance
 leaves the hardest stratum exactly where it was, because at 4\% (one nodule of
 25) there is essentially nothing left to lose. We return to this floor effect
 in Section~\ref{sec:floor}.
+
+\subsection{Unfreezing the Backbone Removes Most of the Penalty}
+\label{sec:ft}
+
+Section~\ref{sec:aug} established that augmentation costs 22 CPM points while the
+backbone is frozen, and offered an explanation: a frozen backbone cannot adapt to
+transformed inputs, so augmented images fall outside the distribution its
+features were learned on. That explanation predicts something testable. If it is
+right, allowing the backbone to adapt should remove the penalty.
+
+We unfroze the last four transformer blocks of RAD-DINO (28.4M of 86.6M
+parameters) and repeated the contrast. Both arms use identical settings
+--- four unfrozen blocks, 20 epochs, five folds, batch 2, seed 42 --- and differ
+only in whether augmentation is applied.
+
+\begin{table}[t]
+\centering
+\caption{The augmentation penalty under a frozen versus a partially fine-tuned
+backbone. Within each row both arms share a protocol and differ only in
+augmentation; the two rows use different protocols and so are compared
+qualitatively.}
+\label{tab:ft}
+\begin{tabular}{lccc}
+\toprule
+Backbone & No aug. & + augmentation & $\Delta$ [95\% CI] \\
+\midrule
+Frozen (10-fold, 60 ep.)        & 43.3 & 21.2 & $-22.1$ $[-28.2, -16.1]$ \\
+4 blocks unfrozen (5-fold, 20 ep.) & 42.2 & 39.1 & $\phantom{0}-3.1$ $[-8.5, +2.1]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The penalty falls from 22.1 points to 3.1, and the interval on the fine-tuned
+contrast contains zero. The two intervals do not overlap. The prediction holds:
+most of the damage augmentation does to this system is attributable to the
+backbone being unable to adapt, not to the augmentation itself.
+
+Two caveats bound this conclusion. The fine-tuned runs use five folds and 20
+epochs against the frozen runs' ten folds and 60, so comparing the two
+\emph{differences} is a comparison across protocols rather than a single
+controlled experiment; within each row the comparison is controlled. And the
+fine-tuned arms are single runs, where Section~\ref{sec:noise} measured a
+run-to-run spread of roughly four CPM points --- large enough to matter for a
+difference of 3.1. The qualitative collapse from 22 points to near zero is far
+outside that noise; the residual 3.1 is not.
+
+Fine-tuning did not improve aggregate performance: 42.2\% $[35.3, 49.3]$ against
+43.3\% for the frozen backbone with bone suppression. Its value here is
+explanatory rather than practical.
 
 \subsection{The Most Subtle Stratum Resists Every Configuration}
 \label{sec:floor}
@@ -543,13 +600,17 @@ measured.
 
 \paragraph{Frozen backbones and augmentation.}
 Augmenting the training data while the backbone remained frozen reduced CPM by
-22.1 points $[-28.2, -16.1]$. The magnitude is measured and is not in question.
-The \emph{explanation} is: the natural account is that a frozen backbone cannot
-adapt to transformed inputs, so augmented images fall outside the distribution
-its features were learned on. We flag this as a hypothesis our experiments do
-not test, and we distinguish it carefully from the measurement. \pending{the partial fine-tuning experiment tests this directly: if
-unfreezing the last blocks removes the augmentation penalty the hypothesis
-holds; if not, this paragraph must be rewritten}
+22.1 points $[-28.2, -16.1]$. The natural account --- that a frozen backbone
+cannot adapt to transformed inputs, so augmented images fall outside the
+distribution its features were learned on --- makes a falsifiable prediction, and
+Section~\ref{sec:ft} tests it. Unfreezing four transformer blocks reduces the
+penalty to 3.1 points with an interval containing zero. The explanation survives
+the test.
+
+We note that this is the kind of claim most often left as an untested aside in
+this literature. It cost one additional experiment to check, and had the penalty
+persisted under fine-tuning we would have had to withdraw the explanation
+entirely.
 
 \paragraph{Relation to prior findings.}
 Our observation that frozen foundation features lose small-lesion signal
@@ -575,9 +636,12 @@ generalisation.
         direct consequence, and the stratified intervals are very wide.
   \item \textbf{One nodule per image.} JSRT contains a single nodule per
         positive case, which does not reflect clinical reality.
-  \item \textbf{Frozen backbone.} The foundation-model configuration uses
-        RAD-DINO purely as a feature extractor. We did not fine-tune it, so our
-        results characterise frozen features and not the model's ceiling.
+  \item \textbf{Mostly frozen backbone.} The main configurations use RAD-DINO
+        purely as a feature extractor, so those results characterise frozen
+        features and not the model's ceiling. The partial fine-tuning of
+        Section~\ref{sec:ft} uses a shorter protocol (five folds, 20 epochs) and
+        a single seed, so it supports a qualitative conclusion about the
+        augmentation penalty but not a precise effect size.
   \item \textbf{Performance below published work.} Our absolute CPM values are
         lower than results reported by others on JSRT \todo{cite}. We report
         relative comparisons under a controlled protocol rather than competing
@@ -610,14 +674,21 @@ together, and that they report gains per stratum rather than in aggregate.
 
 One finding survives this scrutiny. Detection of the most subtle nodules
 remains between 0\% and 8\% across every configuration we tested, including one
-built on a backbone pre-trained on 838{,}000 radiographs. The hardest and most
-clinically valuable stratum is not addressed by any method examined here, and
-scale of pre-training does not address it either.
+built on a backbone pre-trained on 838{,}000 radiographs, and it does not move
+even under a manipulation severe enough to halve overall performance. The
+hardest and most clinically valuable stratum is not addressed by any method
+examined here, and scale of pre-training does not address it either.
+
+Where an explanation was available to test, we tested it. The claim that
+augmentation harms a frozen-backbone detector because the backbone cannot adapt
+is the kind of plausible aside this literature usually leaves unexamined;
+unfreezing four blocks reduces the penalty from 22.1 points to 3.1, and the
+account holds.
 
 % =====================================================================
 \section*{Reproducibility}
 
-\todo{repository URL}. Bootstrap and multi-seed tooling
+Code is available at \url{https://github.com/xiabui/cxr}. Bootstrap and multi-seed tooling
 (\texttt{bootstrap\_ci.py}, \texttt{run\_seeds.py}) is released with the code.
 Per-image raw detection scores are written for every run, so all intervals in
 this paper can be recomputed without retraining.
