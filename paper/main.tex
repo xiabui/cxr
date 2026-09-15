@@ -124,26 +124,33 @@ routinely reported as improvements. We show they should not be.
 Our contributions:
 
 \begin{enumerate}
-  \item A subtlety-stratified comparison of three detection configurations
-        under leave-one-out cross-validation on JSRT, with every figure
-        accompanied by a bootstrap confidence interval.
-  \item An image-level cluster bootstrap appropriate to FROC analysis, in
-        which the operating threshold is recomputed inside each resample
-        rather than held fixed. We show why the fixed-threshold alternative
-        understates the interval.
+  \item A subtlety-stratified comparison of detection configurations on JSRT in
+        which every figure, aggregate and per-stratum, carries a bootstrap
+        confidence interval.
+  \item A procedure that separates training uncertainty from sampling
+        uncertainty --- averaging over seeds, then applying an image-level
+        cluster bootstrap to that average. We show that reporting either alone
+        is misleading in both directions, and that on this dataset the
+        single-run interval conceals a real effect.
   \item A measurement of run-to-run variability due to random initialisation,
         which we find comparable in magnitude to the architectural effects
         under study.
   \item Evidence that the most subtle stratum resists every configuration
-        tested, including frozen foundation-model features.
+        tested, and does not move even under a manipulation that halves
+        aggregate performance.
   \item A direct test of the standard explanation for why augmentation degrades
         a frozen-backbone detector, by partially unfreezing the backbone.
+  \item External validation on VinDr-CXR with the match-tolerance difference
+        measured and removed, so that the drop is attributed to generalisation
+        rather than to a change of criterion.
 \end{enumerate}
 
 All quantitative claims rest on ten-fold cross-validation with fixed seeds and
 retained per-image scores, so every interval in this paper can be recomputed
-without retraining. Leave-one-out figures from our earlier experiments appear
-once, in Table~\ref{tab:loocv}, explicitly marked as single unseeded runs.
+without retraining, and the threshold experiment above can be reproduced from
+the released scores alone. Leave-one-out figures from our earlier experiments
+appear once, in Table~\ref{tab:loocv}, explicitly marked as single unseeded
+runs.
 
 We make no claim of priority. Horry~et~al.~\cite{horry2023fullres} analysed
 JSRT by subtlety with a full-resolution encoder--decoder, observed the same
@@ -324,9 +331,14 @@ selected image contributes all of its nodules and all of its false positives.
 
 \paragraph{Recompute the threshold inside each resample.}
 Holding the original-sample threshold fixed ignores the uncertainty in
-estimating that threshold, and yields intervals that are narrower than the data
-support. In each resample we recompute the threshold from that resample's own
-false-positive scores.
+estimating that threshold. In each resample we therefore recompute the threshold
+from that resample's own false-positive scores. We measured what this costs by
+running both variants on identical resamples, differing only in whether the
+threshold is recomputed: fixing it narrows intervals by 2.9\% on average and by
+up to 11.8\% at individual operating points. The effect is real but modest, and
+we report the magnitude rather than assert that it is large --- on this dataset
+the choice does not change any conclusion, and the larger distortion by far is
+the conflation described in Section~\ref{sec:twonoise}.
 
 \paragraph{Pair the comparison.}
 When comparing two configurations we resample the same image indices for both
@@ -338,6 +350,15 @@ wider than necessary.
 Because the stratified comparisons involve five strata at several operating
 points, we make no multiplicity correction and treat those results as
 exploratory.
+
+Two limitations of the procedure should be stated. The BCa acceleration is
+estimated by a jackknife over images, which assumes the statistic behaves
+smoothly under deletion; the threshold recomputation makes it only piecewise
+smooth, so the interval endpoints carry some approximation error beyond Monte
+Carlo noise. And the seed-averaged estimator of Section~\ref{sec:twonoise}
+bootstraps images around an average of five runs, which propagates sampling
+uncertainty but not the uncertainty of having estimated that average from five
+seeds rather than many.
 
 % =====================================================================
 \section{Results}
