@@ -81,12 +81,17 @@ def compute_froc(all_results, n_images, n_total_nodules, fp_rates):
 
 def sensitivity_by_subtlety(matched_per_image, target_fp_per_image, n_images):
     """Độ nhạy tách theo mức subtlety, tại một ngưỡng điểm sao cho FP/ảnh ~ target.
-    matched_per_image: list theo ảnh, mỗi phần tử (results, unmatched_nodules).
+    matched_per_image: list theo ảnh, mỗi phần tử (results, unmatched_nodules)
+    hoặc (results, unmatched_nodules, filename).
     Trả về {subtlety: (n_hit, n_total, sensitivity)}.
-    Nốt được coi TRÚNG nếu detection trúng nó có score >= ngưỡng (nhất quán FROC)."""
+    Nốt được coi TRÚNG nếu detection trúng nó có score >= ngưỡng (nhất quán FROC).
+
+    Lấy phần tử theo CHỈ SỐ chứ không giải nén cứng: từng có lúc train.py thêm
+    tên file vào tuple và hàm này vỡ ngay, làm tiến trình chết TRƯỚC bước ghi
+    kết quả — mà traceback thì bị lọc mất nên trông như chạy bình thường."""
     # gộp tất cả FP để tìm ngưỡng đạt target FP/ảnh
     all_fp_scores = sorted(
-        [s for (res, _) in matched_per_image for (s, tp) in res if not tp],
+        [s for item in matched_per_image for (s, tp) in item[0] if not tp],
         reverse=True)
     budget = int(round(target_fp_per_image * n_images))
     thresh = all_fp_scores[budget - 1] if 0 < budget <= len(all_fp_scores) \
@@ -94,7 +99,8 @@ def sensitivity_by_subtlety(matched_per_image, target_fp_per_image, n_images):
 
     from collections import defaultdict
     hit = defaultdict(int); tot = defaultdict(int)
-    for (res, unmatched) in matched_per_image:
+    for item in matched_per_image:
+        unmatched = item[1]
         for nd in unmatched:
             tot[nd["subtlety"]] += 1
             # trúng chỉ khi có detection trúng nốt VÀ score >= ngưỡng
